@@ -13,12 +13,15 @@
 * keep a record of the names of input files. when saving images, just append the section number to this, to avoid the user having to create directories for each slide.
 * GUI is very ugly -- lay it out better. This current version (06-03-2024) is just a pilot
 * add ability for config with parameters like padding, lightbg, darkbg, etc
+* would be cool (but ambitious): interactive rect plot to resize the rectangles
+
 * Use and keep record of bugs to fix
   * bug: selecting an image, not cropping, then selecting another image will update the image in memory but will not display. this is due to the bool I have that ensures images won't be displayed twice.
 
 
-
+```
  ／l、                KP❤️
 （ﾟ､ ｡ ７
   l  ~ヽ
   じしf_,)ノ
+```

@@ -13,3 +13,9 @@
 * keep a record of the names of input files. when saving images, just append the section number to this, to avoid the user having to create directories for each slide.
 * GUI is very ugly -- lay it out better. This current version (06-03-2024) is just a pilot
 * Use and keep record of bugs to fix
+
+
+ ／l、                KP❤️
+（ﾟ､ ｡ ７
+  l  ~ヽ
+  じしf_,)ノ

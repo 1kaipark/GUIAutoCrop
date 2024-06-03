@@ -43,6 +43,11 @@ def choose_image() -> None:
     root = Tk()
     root.withdraw()
     img_path = askopenfilename()
+    
+    # set image_title variable
+    global image_title
+    image_title = img_path.split('/')[-1].split('.')[0]
+    print(image_title)
 
     image = load_img_array(img_path)
     global image_shown
@@ -107,6 +112,7 @@ def crop_rects():
 
     global cropped_images_shown
     global image_shown
+    global image_title
 
     if cropped_images is not None and not cropped_images_shown:
         image_shown = False
@@ -116,7 +122,7 @@ def crop_rects():
         plot1 = fig.subplots(1, len(idx))
         for i, cropped_img in enumerate(cropped_images):
             plot1[i].imshow(cropped_img)
-            plot1[i].set_title(f's{str(i + 1).zfill(3)}')
+            plot1[i].set_title(f'_s{str(i + 1).zfill(3)}')
 
             # HIDE AXES: https://www.tutorialspoint.com/how-to-turn-off-the-ticks-and-marks-of-a-matlibplot-axes
             # Hide X and Y axes label marks
@@ -151,7 +157,7 @@ def rotate():
         plot1 = fig.subplots(1, len(idx))
         for i, cropped_img in enumerate(cropped_images):
             plot1[i].imshow(cropped_img)
-            plot1[i].set_title(f's{str(i + 1).zfill(3)}')
+            plot1[i].set_title(f'_s{str(i + 1).zfill(3)}')
 
             # HIDE AXES: https://www.tutorialspoint.com/how-to-turn-off-the-ticks-and-marks-of-a-matlibplot-axes
             # Hide X and Y axes label marks
@@ -176,6 +182,7 @@ def rotate():
 
 def write_images():
     global cropped_images
+    global image_title
 
     # get directory to write images to
     root = Tk()
@@ -185,7 +192,7 @@ def write_images():
 
     for idx, o in enumerate(cropped_images):
         out_img = PILImage.fromarray(o)
-        out_name = f"s{str(idx + 1).zfill(3)}.png"
+        out_name = f"{image_title}_s{str(idx + 1).zfill(3)}.png"
         out_img.save(os.path.join(save_path, out_name))
 
 

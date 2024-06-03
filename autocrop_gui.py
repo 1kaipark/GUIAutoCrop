@@ -32,11 +32,7 @@ brs = []
 
 cropped_images = None
 cropped_images_shown = False
-
-image_title = None  # Global this... use this to save images
-
-
-# image_title.split('.')[0]
+image_title = None
 
 def choose_image() -> None:
     global image
@@ -58,7 +54,7 @@ def choose_image() -> None:
         cropped_images_shown = False
         fig = Figure()
         # y = [i**2 for i in range(101)]
-        plot1 = fig.add_subplot(111)
+        plot1 = fig.add_subplot()
 
         thresh, brs = generate_thresholded_image(image)
         plot1.imshow(thresh)
@@ -76,9 +72,9 @@ def choose_image() -> None:
         plot1.set_xticks([])
         plot1.set_yticks([])
 
-        fig.tight_layout()
+        fig.tight_layout(pad=0)
 
-        canvas = FigureCanvasTkAgg(fig, master=window)
+        canvas = FigureCanvasTkAgg(fig, master=frame_plot)
         canvas.draw()
 
         canvas.get_tk_widget().grid(row=2, column=0)
@@ -91,7 +87,7 @@ def choose_image() -> None:
 
 
 def crop_rects():
-    global idx
+    global idx, cropped_images, image, brs
     # get indices from entry
     try:
         idx = valid_idx.get().split(',')
@@ -101,18 +97,12 @@ def crop_rects():
     print(idx)
 
     # crop the rectangles according to indices
-    global cropped_images
-    global image
-    global brs
-
     if image is not None and brs is not None:
         # save cropped images to a list of arrays
         cropped_images = save_cropped_images(source_image=image, valid_idx=idx, brs=brs)
         print("{} images cropped".format(len(cropped_images)))
 
-    global cropped_images_shown
-    global image_shown
-    global image_title
+    global cropped_images_shown, image_shown, image_title
 
     if cropped_images is not None and not cropped_images_shown:
         image_shown = False
@@ -133,9 +123,9 @@ def crop_rects():
             plot1[i].set_xticks([])
             plot1[i].set_yticks([])
 
-        fig.tight_layout()
+        fig.tight_layout(pad=1)
 
-        canvas = FigureCanvasTkAgg(fig, master=window)
+        canvas = FigureCanvasTkAgg(fig, master=frame_plot)
         canvas.draw()
 
         canvas.get_tk_widget().grid(row=2, column=0)
@@ -170,7 +160,7 @@ def rotate():
 
         fig.tight_layout()
 
-        canvas = FigureCanvasTkAgg(fig, master=window)
+        canvas = FigureCanvasTkAgg(fig, master=frame_plot)
         canvas.draw()
 
         canvas.get_tk_widget().grid(row=2, column=0)
@@ -181,8 +171,7 @@ def rotate():
 
 
 def write_images():
-    global cropped_images
-    global image_title
+    global cropped_images, image_title
 
     # get directory to write images to
     root = Tk()
@@ -199,37 +188,45 @@ def write_images():
 window = Tk()
 window.title('hello bro')
 
+frame_controls = Frame(master=window)
+frame_plot = Frame(master=window)
+
+frame_controls.grid(row=0, column=0, sticky=W)
+frame_plot.grid(row=1, column=0, sticky=NSEW)
 valid_idx = StringVar()
 
-choose_image_button = Button(master=window,
+choose_image_button = Button(master=frame_controls,
                              command=choose_image,
                              height=1, width=10,
                              text='choose image')
 
-valid_idx_label = Label(master=window,
+valid_idx_label = Label(master=frame_controls,
                         text='valid indices')
-valid_idx_entry = Entry(master=window,
+
+valid_idx_entry = Entry(master=frame_controls,
                         textvariable=valid_idx)
-submit_idx_button = Button(master=window,
+
+submit_idx_button = Button(master=frame_controls,
                            command=crop_rects,
                            height=1, width=5,
                            text='crop')
 
-save_button = Button(master=window,
+save_button = Button(master=frame_controls,
                      command=write_images,
                      height=1, width=5,
                      text='save images')
 
-rotate_button = Button(master=window,
+rotate_button = Button(master=frame_controls,
                        command=rotate,
                        height=1, width=5,
                        text='rotate')
+
 
 choose_image_button.grid(row=0, column=0)
 valid_idx_label.grid(row=4, column=0)
 valid_idx_entry.grid(row=4, column=1)
 submit_idx_button.grid(row=4, column=2)
-save_button.grid(row=6, column=0)
+save_button.grid(row=5, column=2)
 
 window.resizable(False, False)
 window.mainloop()

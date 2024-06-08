@@ -45,14 +45,14 @@ def generate_thresholded_image(image: np.ndarray) -> tuple[np.ndarray, list]:
     return blank, brs
 
 
-def crop_rect(img: np.ndarray, rect: tuple[int, int, int, int], pad: int = 25) -> np.ndarray:
+def crop_rect(img: np.ndarray, rect: tuple[int, int, int, int], pad: int = 50) -> np.ndarray:
     '''simple function to return an image cropped according to a rectangle. padding is in pixels'''
     x, y, w, h = rect
     img_crop = img[y - pad:y + h + pad,
                    x - pad:x + w + pad]
     return img_crop
 
-def save_cropped_images(source_image: np.ndarray, valid_idx: list[int], brs: list[tuple[int, int, int, int]]) -> list[np.ndarray]:
+def get_cropped_images(source_image: np.ndarray, valid_idx: list[int], brs: list[tuple[int, int, int, int]]) -> list[np.ndarray]:
     # this function here should take args:
     # source_image: the un-processed image that should be cropped
     # valid_idx: list of valid indices

@@ -11,7 +11,7 @@ import cv2 as cv
 
 import os
 
-from shortcuts.imgutil import load_img_array
+from imgutil import load_img_array
 from autocrop import generate_thresholded_image, get_cropped_images
 
 class CropWindow(Toplevel):
@@ -193,9 +193,4 @@ class CropWindow(Toplevel):
                 out_path = os.path.join(save_path, out_name)
                 out_img.save(out_path + '.png')
 
-from shortcuts.file_io import choose_file
-if __name__ == "__main__":
-    root = Tk()
-    app = CropWindow(root, img_path='/Users/applelaptop/QUINT_WD/PawtyAnimal5/MC/stitched/slide17.tif')
-    root.mainloop()
 

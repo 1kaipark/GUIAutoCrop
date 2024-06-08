@@ -31,7 +31,7 @@ def show_subwindow(iid):
 
 
 window = Tk()
-window.title("Treeview Test")
+window.title("Select Slides")
 
 tree = ttk.Treeview(master=window, columns=('processed'))
 tree.heading('#0', text='Item')

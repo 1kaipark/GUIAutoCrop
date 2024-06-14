@@ -7,6 +7,7 @@ from tkinter.filedialog import askopenfilenames
 from crop_window import CropWindow
 
 image_paths_list = None
+image_meta_dict = {}
 
 
 def load_images():
@@ -27,6 +28,9 @@ def on_item_click(event):
 def show_subwindow(iid):
     fpath = tree.item(iid, option='text')
     app = CropWindow(window, fpath)
+    # TODO!
+    image_meta_dict[app.image_title] = 0
+    print(app.image_title)
     tree.item(iid, values=('Yes'))
 
 

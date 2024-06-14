@@ -5,7 +5,7 @@ import scipy.ndimage as ndimage
 
 from shortcuts.imgutil import split_channels, erode
 
-def generate_thresholded_image(image: np.ndarray) -> tuple[np.ndarray, list]:
+def generate_thresholded_image(image: np.ndarray, k: int = 4) -> tuple[np.ndarray, list]:
     iseg = ImageSegmenter()
     r, g, b = split_channels(image)
 
@@ -13,7 +13,7 @@ def generate_thresholded_image(image: np.ndarray) -> tuple[np.ndarray, list]:
     clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(4,4)) # enhance contrast
     b = clahe.apply(b[:,:,2])
 
-    t = iseg._threshold_image(b, k = 4, lightbg = 'auto', darkbg = 'auto')
+    t = iseg._threshold_image(b, k = k, lightbg = 'auto', darkbg = 'auto')
     t = ImageSegmenter._image_dilation(t)
     t = ImageSegmenter._noise_reduction(t)
     t = ndimage.binary_fill_holes(t.astype(int))

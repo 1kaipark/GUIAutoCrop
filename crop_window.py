@@ -1,4 +1,5 @@
 # The sub-window for processing and cropping slides
+# Souce: passing from subwindow to main window https://www.youtube.com/watch?v=wHeoWM4xv0U
 
 from tkinter import *
 from tkinter.filedialog import askdirectory
@@ -14,9 +15,12 @@ import os
 from imgutil import load_img_array
 from autocrop import generate_thresholded_image, get_cropped_images
 
+from typing import Callable, Any
+
 class CropWindow(Toplevel):
-    def __init__(self, master, img_path):
+    def __init__(self, master: Tk, img_path: str, update_callable: Callable, iid: Any) -> None:
         super().__init__(master)
+        self.iid = iid
 
         self.image_path = img_path
 
@@ -36,6 +40,9 @@ class CropWindow(Toplevel):
 
         # valid indices input entry
         self.valid_idx = StringVar()
+
+        # update callable -- to pass to mainwindow
+        self.update_callable = update_callable
 
         # initialize UI
         self.init_ui()
@@ -119,6 +126,10 @@ class CropWindow(Toplevel):
                                                       valid_idx=self.idx,
                                                       brs=self.brs)
             print("{} images cropped".format(len(self.cropped_images)))
+
+            # call update function
+            self.update_callable(self.iid, self.idx)
+
             self.is_cropped = True
 
         if len(self.cropped_images) != 0:

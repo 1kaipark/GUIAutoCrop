@@ -7,7 +7,7 @@ from _tkinter import TclError
 
 import random
 
-from crop_window import CropWindow
+from lib.crop_window import CropWindow
 
 from typing import Any
 

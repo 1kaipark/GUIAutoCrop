@@ -1,9 +1,9 @@
-from ImageSegmenter import ImageSegmenter
+from .ImageSegmenter import ImageSegmenter
 import numpy as np
 import cv2 as cv
 import scipy.ndimage as ndimage
 
-from shortcuts.imgutil import split_channels, erode
+from .imgutil import split_channels, erode
 
 def generate_thresholded_image(image: np.ndarray, k: int = 4) -> tuple[np.ndarray, list]:
     iseg = ImageSegmenter()

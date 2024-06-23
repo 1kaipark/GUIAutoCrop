@@ -1,5 +1,21 @@
-# The sub-window for processing and cropping slides
-# Souce: passing from subwindow to main window https://www.youtube.com/watch?v=wHeoWM4xv0U
+"""The sub-window for processing and cropping slides
+Souce: passing from subwindow to main window https://www.youtube.com/watch?v=wHeoWM4xv0U
+
+TODO: series of buttons like 
+* 'Raise Threshold', 'Lower Threshold'
+* Toggle Force Light BG, Toggle Force Dark BG
+* +10 Padding, -10 Padding
+* Ultimately want to make these sliders. Is there any way to make them automatically update when changed value?
+
+TODO: delete print statements
+TODO: (lazy so optional) if cropped, load indices and crop automatically 
+
+ ／l、               
+（ﾟ､ ｡ ７         
+  l  ~ヽ       
+  じしf_,)ノ
+
+"""
 
 from tkinter import *
 from tkinter.filedialog import askdirectory
@@ -8,6 +24,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from PIL import Image as PILImage
+import numpy as np
 import cv2 as cv
 
 import os
@@ -18,22 +35,26 @@ from .autocrop import generate_thresholded_image, get_cropped_images
 from typing import Callable, Any
 
 class CropWindow(Toplevel):
-    def __init__(self, master: Tk, img_path: str, update_callable: Callable, iid: Any) -> None:
+    def __init__(self, master: Tk, image_path: str, thresh: np.ndarray | None, brs: list[Any] | None, update_callable: Callable, iid: Any) -> None:
         super().__init__(master)
+
+        # this is used to pass to update function to update the tree view
         self.iid = iid
 
-        self.image_path = img_path
+        self.image_path = image_path 
 
         # parse title from file path
-        self.image_title = img_path.split('/')[-1].split('.')[0] # title of image
+        self.image_title = self.image_path.split('/')[-1].split('.')[0] # title of image
         self.title(self.image_title)
 
         # load image_path into array self.image
         self.image = load_img_array(self.image_path)
-        print(self.image.shape)
 
+
+        # globally store these
+        self.thresh = thresh # the thresholded image
+        self.brs = brs # list of boundingRects (tuple[x,y,w,h])
         self.idx = [] # indices of bounding rects to crop by
-        self.brs = [] # list of boundingRects (tuple[x,y,w,h])
 
         self.cropped_images = [] # list of ndarrays corresponding to each cropped section
         self.is_cropped = False
@@ -70,18 +91,28 @@ class CropWindow(Toplevel):
 
         self.resizable(False, False)
 
+        # if already fed thresholded image, display it
+        print((self.thresh is None), self.brs)
+        if self.thresh is not None and self.brs is not None:
+            self.load_thresh()
+
 
     # function to process (threshold, display indices) passed image to init
     def show_image(self):
         # self.image
         if self.image is not None:
+            self.title('Processing Image') # update status as title
             self.is_cropped = False # use this to keep tabs on whether the image is cropped
 
             fig = Figure()
             plot = fig.add_subplot()
+            self.thresh, self.brs = generate_thresholded_image(self.image)
 
-            thresh, self.brs = generate_thresholded_image(self.image)
-            plot.imshow(thresh)
+            # pass thresh and brs to update function
+            self.update_callable(self.iid, None, self.thresh, self.brs)
+
+            # show on plot widget
+            plot.imshow(self.thresh)
 
             for n, rect in enumerate(self.brs):
                 x, y, w, h = rect
@@ -102,6 +133,45 @@ class CropWindow(Toplevel):
             canvas = FigureCanvasTkAgg(fig, master=self)
             canvas.draw()
 
+            self.title(self.image_title)
+
+            canvas.get_tk_widget().grid(row=2, column=0)
+            self.rotate_button.grid(row=5, column=0)
+
+        else:
+            print('No Images to crop!')
+
+    def load_thresh(self):
+        # self.image
+        if self.thresh is not None:
+            self.is_cropped = False # use this to keep tabs on whether the image is cropped
+
+            fig = Figure()
+            plot = fig.add_subplot()
+            # show on plot widget
+            plot.imshow(self.thresh)
+
+            for n, rect in enumerate(self.brs):
+                x, y, w, h = rect
+                plot.text(x=x, y=y - (0.2*y), s=f'idx {n}', color='w')
+
+            # HIDE AXES: https://www.tutorialspoint.com/how-to-turn-off-the-ticks-and-marks-of-a-matlibplot-axes
+            # Hide X and Y axes label marks
+            plot.xaxis.set_tick_params(labelbottom=False)
+            plot.yaxis.set_tick_params(labelleft=False)
+
+            # Hide X and Y axes tick marks
+            plot.set_xticks([])
+            plot.set_yticks([])
+
+            fig.tight_layout(pad=0)
+
+            # add to tkinter canvas
+            canvas = FigureCanvasTkAgg(fig, master=self)
+            canvas.draw()
+
+            self.title(self.image_title)
+
             canvas.get_tk_widget().grid(row=2, column=0)
             self.rotate_button.grid(row=5, column=0)
 
@@ -117,10 +187,12 @@ class CropWindow(Toplevel):
             self.idx = [int(i.strip()) for i in self.idx]
             print(self.idx)
         except Exception:
-            print("Enter indices as integer values, separated by columns.")
+            print("unable to parse input {}".format(self.valid_idx.get()))
+            return 0
 
-        if (self.image is not None and len(self.brs) != 0):
-            print('will attempt to crop.')
+        print(self.image, self.brs)
+        if (self.image is not None and self.brs is not None):
+            print('will attempt to crop image of size {} into {} rects.'.format(self.image.shape, len(self.brs)))
             # crop the images and save to self.cropped_images list
             self.cropped_images = get_cropped_images(source_image=self.image,
                                                       valid_idx=self.idx,
@@ -128,7 +200,7 @@ class CropWindow(Toplevel):
             print("{} images cropped".format(len(self.cropped_images)))
 
             # call update function
-            self.update_callable(self.iid, self.idx)
+            self.update_callable(self.iid, self.idx, None, None)
 
             self.is_cropped = True
 
@@ -203,5 +275,3 @@ class CropWindow(Toplevel):
                 out_name = "{}_s{}".format(self.image_title, str(idx+1).zfill(3))
                 out_path = os.path.join(save_path, out_name)
                 out_img.save(out_path + '.png')
-
-

@@ -18,6 +18,8 @@ from lib.crop_window import CropWindow
 
 from typing import Any
 
+import os
+
 image_paths_list = None
 
 metadata_dict = {}
@@ -32,11 +34,12 @@ def load_images():
     image_paths_list = askopenfilenames(parent=root)
     image_paths_list = sorted(image_paths_list)
     for image_path in image_paths_list:
+        fname = os.path.split(image_path)[-1]
         try:
-            tree.insert("", END, text=image_path, values=('No', None), iid=f'{image_path.split("/")[-1]}')
+            tree.insert("", END, text=image_path, values=(fname, 'No', None), iid=fname)
         except TclError:
             # if the IID is already taken, just append a random digit to it. good enough for government work
-            tree.insert("", END, text=image_path, values=('No', None), iid=f'{image_path.split("/")[-1]}_{random.choice(range(10))}')
+            tree.insert("", END, text=image_path, values=(fname, 'No', None), iid=f'{fname}_{random.randint(0, 10)}')
 
 def update_metadata(iid: Any, valid_indices: list, thresholded_image: Any, brs: list[Any]):
     # this function will be called by the subwindow, and will update the dict
@@ -44,7 +47,8 @@ def update_metadata(iid: Any, valid_indices: list, thresholded_image: Any, brs: 
     if valid_indices:
         # can be fed list of indices to update the treeview and internal storage dict
         metadata_dict[iid] = valid_indices
-        tree.item((iid, ), values=('Yes', valid_indices))
+        fname = iid[0]
+        tree.item((iid, ), values=(fname, 'Yes', valid_indices))
         print(metadata_dict)
 
     if thresholded_image is not None and brs:
@@ -78,14 +82,17 @@ def show_subwindow(iid):
         idx = metadata_dict[iid]
     except KeyError:
         idx = None
-    tree.item(iid, values=('Yes', idx))
+    fname = iid[0]
+
+    tree.item(iid, values=(fname, 'Yes', idx))
 
 
 window = Tk()
 window.title("Select Slides")
 
-tree = ttk.Treeview(master=window, columns=('processed', 'crop_indices'))
+tree = ttk.Treeview(master=window, columns=('fname', 'processed', 'crop_indices'))
 tree.heading('#0', text='Item')
+tree.heading('fname', text='File Name')
 tree.heading('processed', text='Viewed')
 tree.heading('crop_indices', text='Cropping Indices')
 

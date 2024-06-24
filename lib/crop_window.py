@@ -19,6 +19,7 @@ TODO: (lazy so optional) if cropped, load indices and crop automatically
 
 from tkinter import *
 from tkinter.filedialog import askdirectory
+from tkinter import messagebox
 
 
 from matplotlib.figure import Figure
@@ -116,10 +117,9 @@ class CropWindow(Toplevel):
         self.valid_idx_entry.grid(row=3, column=5)
         self.crop_button.grid(row=3, column=6)
 
+    def update_ui_post_crop(self):
         self.rotate_button.grid(row=5, column=4)
         self.save_button.grid(row=5, column=5)
-
-
 
     # function to process (threshold, display indices) passed image to init
     def show_image(self, pad: int = 50):
@@ -232,6 +232,8 @@ class CropWindow(Toplevel):
                                                       brs=self.brs)
             print("{} images cropped".format(len(self.cropped_images)))
 
+            self.update_ui_post_crop()
+
             # call update function
             self.update_callable(self.iid, self.idx, None, None)
 
@@ -308,3 +310,5 @@ class CropWindow(Toplevel):
                 out_name = "{}_s{}".format(self.image_title, str(idx+1).zfill(3))
                 out_path = os.path.join(save_path, out_name)
                 out_img.save(out_path + '.png')
+
+            messagebox.showinfo('Saved', 'Saved Images to {}'.format(out_path))

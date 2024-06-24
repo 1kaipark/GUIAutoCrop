@@ -20,6 +20,7 @@ TODO: (lazy so optional) if cropped, load indices and crop automatically
 from tkinter import *
 from tkinter.filedialog import askdirectory
 
+
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -65,12 +66,16 @@ class CropWindow(Toplevel):
         # update callable -- to pass to mainwindow
         self.update_callable = update_callable
 
+        # these parameters are for the object detection and cropping. stored internally
+        self.k = 5 # default value
+        self.pad = 50 # default as well 
+
         # initialize UI
         self.init_ui()
 
     def init_ui(self): # initialize UI elements
         self.show_image_button = Button(self, command=self.show_image,
-                                        height=1, width=8, text = 'Process')
+                                        height=2, width=10, text = 'Process')
         self.show_image_button.grid(row=1, column=0)
 
         self.valid_idx_label = Label(self, text='Valid Indices')
@@ -78,13 +83,18 @@ class CropWindow(Toplevel):
         self.crop_button = Button(self, command=self.crop_rects,
                                         height=1, width=5, text='Crop')
 
-        self.valid_idx_label.grid(row=4, column=0)
-        self.valid_idx_entry.grid(row=4, column=1)
-        self.crop_button.grid(row=4, column=2)
+
+        self.pad_label = Label(self, text='padding')
+        self.pad_spinbox = Spinbox(self, from_=-1000, to = 1000)
+        self.pad_spinbox.delete(0, 'end')
+        self.pad_spinbox.insert(0, self.pad)
+        self.update_padding_btn = Button(self, command=self.update_padding,
+                                         height=1, width=8, text='Update Padding')
+        
 
         self.save_button = Button(self, command=self.write_images,
                                   height=1, width=10, text='Save Images')
-        self.save_button.grid(row=6, column=0)
+
 
         self.rotate_button = Button(self, command=self.rotate,
                                     height=1, width=10, text='Rotate')
@@ -92,13 +102,27 @@ class CropWindow(Toplevel):
         self.resizable(False, False)
 
         # if already fed thresholded image, display it
-        print((self.thresh is None), self.brs)
         if self.thresh is not None and self.brs is not None:
             self.load_thresh()
 
+    def update_ui(self):
+        # once the image is processed, grid everything
+        self.pad_label.grid(row=1, column=4)
+        self.pad_spinbox.grid(row=1, column=5)
+        self.update_padding_btn.grid(row=1, column=6)
+
+
+        self.valid_idx_label.grid(row=3, column=4)
+        self.valid_idx_entry.grid(row=3, column=5)
+        self.crop_button.grid(row=3, column=6)
+
+        self.rotate_button.grid(row=5, column=4)
+        self.save_button.grid(row=5, column=5)
+
+
 
     # function to process (threshold, display indices) passed image to init
-    def show_image(self):
+    def show_image(self, pad: int = 50):
         # self.image
         if self.image is not None:
             self.title('Processing Image') # update status as title
@@ -106,7 +130,7 @@ class CropWindow(Toplevel):
 
             fig = Figure()
             plot = fig.add_subplot()
-            self.thresh, self.brs = generate_thresholded_image(self.image)
+            self.thresh, self.brs = generate_thresholded_image(self.image, self.k, pad)
 
             # pass thresh and brs to update function
             self.update_callable(self.iid, None, self.thresh, self.brs)
@@ -136,11 +160,21 @@ class CropWindow(Toplevel):
             self.title(self.image_title)
 
             canvas.get_tk_widget().grid(row=2, column=0)
-            self.rotate_button.grid(row=5, column=0)
+            self.update_ui()
 
         else:
             print('No Images to crop!')
 
+
+    def update_padding(self):
+        self.pad = int(self.pad_spinbox.get())
+        print(self.pad)
+        self.show_image(pad=self.pad)
+
+
+
+
+    # this loads threshold fed to class during instantiation
     def load_thresh(self):
         # self.image
         if self.thresh is not None:
@@ -173,8 +207,7 @@ class CropWindow(Toplevel):
             self.title(self.image_title)
 
             canvas.get_tk_widget().grid(row=2, column=0)
-            self.rotate_button.grid(row=5, column=0)
-
+            self.update_ui()
         else:
             print('No Images to crop!')
 

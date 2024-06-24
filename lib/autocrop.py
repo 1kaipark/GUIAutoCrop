@@ -5,7 +5,10 @@ import scipy.ndimage as ndimage
 
 from .imgutil import split_channels, erode
 
-def generate_thresholded_image(image: np.ndarray, k: int = 4) -> tuple[np.ndarray, list]:
+def generate_thresholded_image(image: np.ndarray, k: int = 4, pad: int = 50) -> tuple[np.ndarray, list]:
+    """takes args image: the image to be thresholded,
+    k: modulates threshold intensity for calculation of contours,
+    pad: padding to add to the rectangles"""
     iseg = ImageSegmenter()
     r, g, b = split_channels(image)
 
@@ -35,12 +38,12 @@ def generate_thresholded_image(image: np.ndarray, k: int = 4) -> tuple[np.ndarra
     brs = []
     for contour in approx_ctrs:
         x, y, w, h = cv.boundingRect(contour)
-        brs.append((x, y, w, h))
+        brs.append((x-pad, y-pad, x+w+pad, y+h+pad))
 
     blank = image.copy()
     for n, rect in enumerate(brs):
-        x, y, w, h = rect
-        cv.rectangle(blank, (x, y), (x + w, y + h), (255, 255, 0), 2)
+        x1, y1, x2, y2 = rect
+        cv.rectangle(blank, (x1, y1), (x2, y2), (255, 255, 0), 2)
 
     return blank, brs
 
@@ -52,7 +55,7 @@ def crop_rect(img: np.ndarray, rect: tuple[int, int, int, int], pad: int = 50) -
                    x - pad:x + w + pad]
     return img_crop
 
-def get_cropped_images(source_image: np.ndarray, valid_idx: list[int], brs: list[tuple[int, int, int, int]]) -> list[np.ndarray]:
+def get_cropped_images(source_image: np.ndarray, valid_idx: list[int], brs: list[tuple[int, int, int, int]], pad: int = 50) -> list[np.ndarray]:
     # this function here should take args:
     # source_image: the un-processed image that should be cropped
     # valid_idx: list of valid indices
@@ -60,7 +63,7 @@ def get_cropped_images(source_image: np.ndarray, valid_idx: list[int], brs: list
     # this should return out_rects
 
     valid_rects = [brs[n] for n in valid_idx]
-    return [crop_rect(source_image, rect) for rect in valid_rects]
+    return [crop_rect(source_image, rect, pad) for rect in valid_rects]
 
 
 class INeedToMakeThisIntoAFunctionAndThisIsSoIDontGetErrors:

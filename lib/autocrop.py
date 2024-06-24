@@ -66,31 +66,3 @@ def get_cropped_images(source_image: np.ndarray, valid_idx: list[int], brs: list
     return [crop_rect(source_image, rect, pad) for rect in valid_rects]
 
 
-class INeedToMakeThisIntoAFunctionAndThisIsSoIDontGetErrors:
-    img = np.ndarray([1])
-    VALID_INDICES = []
-    brs = [(1,1,1,1)]
-    img_name = None
-
-    # this image will be cropped
-    blank2 = img.copy()
-    valid_rects = [brs[n] for n in VALID_INDICES]  # only take the indices that are confirmed valid
-
-    # make a list of all the cropped sections
-    out_rects = [crop_rect(blank2, rect) for rect in valid_rects]
-
-
-    # DO NOT INCLUDE THE PLOTTING CODE: idk how i can implement this into GUI
-    # plot them. images should be in order from left to right as long as the indices specified above are in the same order as on the picture.
-    # f, ax = plt.subplots(1, len(VALID_INDICES), figsize=(40, 10))
-    # for i, o in enumerate(out_rects):
-    #     o = cv.rotate(o, cv.ROTATE_90_CLOCKWISE)
-    #     ax[i].imshow(o)
-    #
-    # f.suptitle(img_name)
-    # don't know why the spacing is so annoying and i don't feel like fixing it
-
-    # TODO:
-    # this will be more complex for 2 row slide conventions. i'm not sure how to best handle that.
-    # f.savefig() into directory named after the original image.
-    # ipath.split('/')[-1].split('.')[0] -- get the filename and take out the extension and use this as folder nmae?

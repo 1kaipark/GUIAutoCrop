@@ -12,8 +12,8 @@ def generate_thresholded_image(image: np.ndarray, k: int = 4, pad: int = 50) -> 
     iseg = ImageSegmenter()
     r, g, b = split_channels(image)
 
-    b = erode(b, iterations = 2) # run on blue channel; erode to reduce noise
-    clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(4,4)) # enhance contrast
+    # b = erode(b, iterations = 2) # run on blue channel; erode to reduce noise
+    clahe = cv.createCLAHE(clipLimit=1.0, tileGridSize=(4,4)) # enhance contrast
     b = clahe.apply(b[:,:,2])
 
     t = iseg._threshold_image(b, k = k, lightbg = 'auto', darkbg = 'auto')

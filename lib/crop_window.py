@@ -74,7 +74,7 @@ class CropWindow(Toplevel):
         # initialize UI
         self.init_ui()
 
-    def init_ui(self): # initialize UI elements
+    def init_ui(self) -> None: # initialize UI elements
         self.show_image_button = Button(self, command=self.show_image,
                                         height=2, width=10, text = 'Process')
         self.show_image_button.grid(row=1, column=0)
@@ -106,7 +106,7 @@ class CropWindow(Toplevel):
         if self.thresh is not None and self.brs is not None:
             self.load_thresh()
 
-    def update_ui(self):
+    def update_ui(self) -> None:
         # once the image is processed, grid everything
         self.pad_label.grid(row=1, column=4)
         self.pad_spinbox.grid(row=1, column=5)
@@ -117,12 +117,12 @@ class CropWindow(Toplevel):
         self.valid_idx_entry.grid(row=3, column=5)
         self.crop_button.grid(row=3, column=6)
 
-    def update_ui_post_crop(self):
+    def update_ui_post_crop(self) -> None:
         self.rotate_button.grid(row=5, column=4)
         self.save_button.grid(row=5, column=5)
 
     # function to process (threshold, display indices) passed image to init
-    def show_image(self, pad: int = 50):
+    def show_image(self, pad: int = 50) -> None:
         # self.image
         if self.image is not None:
             self.title('Processing Image') # update status as title
@@ -166,7 +166,7 @@ class CropWindow(Toplevel):
             print('No Images to crop!')
 
 
-    def update_padding(self):
+    def update_padding(self) -> None:
         self.pad = int(self.pad_spinbox.get())
         print(self.pad)
         self.show_image(pad=self.pad)
@@ -175,7 +175,7 @@ class CropWindow(Toplevel):
 
 
     # this loads threshold fed to class during instantiation
-    def load_thresh(self):
+    def load_thresh(self) -> None:
         # self.image
         if self.thresh is not None:
             self.is_cropped = False # use this to keep tabs on whether the image is cropped
@@ -213,7 +213,7 @@ class CropWindow(Toplevel):
 
 
     # code to crop the image according to the defined boundingRects
-    def crop_rects(self):
+    def crop_rects(self) -> None:
         try:
             # try to parse indices entry
             self.idx = self.valid_idx.get().split(',')
@@ -271,7 +271,7 @@ class CropWindow(Toplevel):
 
 
     # rotate button will perform a 90 degree clockwise rotation
-    def rotate(self):
+    def rotate(self) -> None:
         if len(self.cropped_images) != 0:
             self.cropped_images = [cv.rotate(img, cv.ROTATE_90_CLOCKWISE) for img in self.cropped_images]
 
@@ -299,7 +299,7 @@ class CropWindow(Toplevel):
             self.is_cropped = True
             self.rotate_button.grid(row=5, column=0)
 
-    def write_images(self):
+    def write_images(self) -> None:
         if len(self.cropped_images) != 0:
             root = Tk()
             root.withdraw()

@@ -33,11 +33,12 @@ import os
 
 from .imgutil import load_img_array
 from .autocrop import generate_thresholded_image, get_cropped_images
+from .image_data import ImageData
 
 from typing import Callable, Any
 
 class CropWindow(Toplevel):
-    def __init__(self, master: Tk, image_path: str, thresh: np.ndarray | None, brs: list[Any] | None, update_callable: Callable, iid: Any) -> None:
+    def __init__(self, master: Tk, image_path: str, update_callable: Callable, iid: Any, image_data: "ImageData" = ImageData()) -> None:
         super().__init__(master)
 
         # this is used to pass to update function to update the tree view
@@ -54,9 +55,10 @@ class CropWindow(Toplevel):
 
 
         # globally store these
-        self.thresh = thresh # the thresholded image
-        self.brs = brs # list of boundingRects (tuple[x,y,w,h])
-        self.idx = [] # indices of bounding rects to crop by
+        self.thresh = image_data.thresh # the thresholded image
+        self.brs = image_data.brs # list of boundingRects (tuple[x,y,w,h])
+        self.idx = image_data.idx # indices of bounding rects to crop by
+        self.padding = image_data.padding # padding of cropping rects
 
         self.cropped_images = [] # list of ndarrays corresponding to each cropped section
         self.is_cropped = False
@@ -69,7 +71,6 @@ class CropWindow(Toplevel):
 
         # these parameters are for the object detection and cropping. stored internally
         self.k = 5 # default value
-        self.pad = 50 # default as well 
 
         # initialize UI
         self.init_ui()
@@ -88,7 +89,7 @@ class CropWindow(Toplevel):
         self.pad_label = Label(self, text='padding')
         self.pad_spinbox = Spinbox(self, from_=-1000, to = 1000)
         self.pad_spinbox.delete(0, 'end')
-        self.pad_spinbox.insert(0, self.pad)
+        self.pad_spinbox.insert(0, self.padding)
         self.update_padding_btn = Button(self, command=self.update_padding,
                                          height=1, width=8, text='Update Padding')
         
@@ -104,7 +105,10 @@ class CropWindow(Toplevel):
 
         # if already fed thresholded image, display it
         if self.thresh is not None and self.brs is not None:
-            self.load_thresh()
+            self.show_image(pad=self.padding)
+
+    def update_image_data(self):
+        return ImageData(thresh=self.thresh, brs=self.brs, idx=self.idx, padding=self.padding)
 
     def update_ui(self) -> None:
         # once the image is processed, grid everything
@@ -115,6 +119,9 @@ class CropWindow(Toplevel):
 
         self.valid_idx_label.grid(row=3, column=4)
         self.valid_idx_entry.grid(row=3, column=5)
+        if self.idx:
+            self.valid_idx_entry.delete(0, 'end')
+            self.valid_idx_entry.insert(0, ','.join([str(i) for i in self.idx]))
         self.crop_button.grid(row=3, column=6)
 
     def update_ui_post_crop(self) -> None:
@@ -124,93 +131,52 @@ class CropWindow(Toplevel):
     # function to process (threshold, display indices) passed image to init
     def show_image(self, pad: int = 50) -> None:
         # self.image
-        if self.image is not None:
+        if (self.image is not None and 
+                self.thresh is None and
+                self.brs is None):
             self.title('Processing Image') # update status as title
             self.is_cropped = False # use this to keep tabs on whether the image is cropped
-
-            fig = Figure()
-            plot = fig.add_subplot()
             self.thresh, self.brs = generate_thresholded_image(self.image, self.k, pad)
 
-            # pass thresh and brs to update function
-            self.update_callable(self.iid, None, self.thresh, self.brs)
+        fig = Figure()
+        plot = fig.add_subplot()
 
-            # show on plot widget
-            plot.imshow(self.thresh)
+        # pass thresh and brs to update function
+        self.update_callable(iid=self.iid, image_data = self.update_image_data())
 
-            for n, rect in enumerate(self.brs):
-                x, y, w, h = rect
-                plot.text(x=x, y=y - (0.2*y), s=f'idx {n}', color='w')
+        # show on plot widget
+        plot.imshow(self.thresh)
 
-            # HIDE AXES: https://www.tutorialspoint.com/how-to-turn-off-the-ticks-and-marks-of-a-matlibplot-axes
-            # Hide X and Y axes label marks
-            plot.xaxis.set_tick_params(labelbottom=False)
-            plot.yaxis.set_tick_params(labelleft=False)
+        for n, rect in enumerate(self.brs):
+            x, y, w, h = rect
+            plot.text(x=x, y=y - (0.2*y), s=f'idx {n}', color='w')
 
-            # Hide X and Y axes tick marks
-            plot.set_xticks([])
-            plot.set_yticks([])
+        # HIDE AXES: https://www.tutorialspoint.com/how-to-turn-off-the-ticks-and-marks-of-a-matlibplot-axes
+        # Hide X and Y axes label marks
+        plot.xaxis.set_tick_params(labelbottom=False)
+        plot.yaxis.set_tick_params(labelleft=False)
 
-            fig.tight_layout(pad=0)
+        # Hide X and Y axes tick marks
+        plot.set_xticks([])
+        plot.set_yticks([])
 
-            # add to tkinter canvas
-            canvas = FigureCanvasTkAgg(fig, master=self)
-            canvas.draw()
+        fig.tight_layout(pad=0)
 
-            self.title(self.image_title)
+        # add to tkinter canvas
+        canvas = FigureCanvasTkAgg(fig, master=self)
+        canvas.draw()
 
-            canvas.get_tk_widget().grid(row=2, column=0)
-            self.update_ui()
+        self.title(self.image_title)
 
-        else:
-            print('No Images to crop!')
+        canvas.get_tk_widget().grid(row=2, column=0)
+        self.update_ui()
 
 
     def update_padding(self) -> None:
-        self.pad = int(self.pad_spinbox.get())
-        print(self.pad)
-        self.show_image(pad=self.pad)
-
-
-
-
-    # this loads threshold fed to class during instantiation
-    def load_thresh(self) -> None:
-        # self.image
-        if self.thresh is not None:
-            self.is_cropped = False # use this to keep tabs on whether the image is cropped
-
-            fig = Figure()
-            plot = fig.add_subplot()
-            # show on plot widget
-            plot.imshow(self.thresh)
-
-            for n, rect in enumerate(self.brs):
-                x, y, w, h = rect
-                plot.text(x=x, y=y - (0.2*y), s=f'idx {n}', color='w')
-
-            # HIDE AXES: https://www.tutorialspoint.com/how-to-turn-off-the-ticks-and-marks-of-a-matlibplot-axes
-            # Hide X and Y axes label marks
-            plot.xaxis.set_tick_params(labelbottom=False)
-            plot.yaxis.set_tick_params(labelleft=False)
-
-            # Hide X and Y axes tick marks
-            plot.set_xticks([])
-            plot.set_yticks([])
-
-            fig.tight_layout(pad=0)
-
-            # add to tkinter canvas
-            canvas = FigureCanvasTkAgg(fig, master=self)
-            canvas.draw()
-
-            self.title(self.image_title)
-
-            canvas.get_tk_widget().grid(row=2, column=0)
-            self.update_ui()
-        else:
-            print('No Images to crop!')
-
+        self.padding = int(self.pad_spinbox.get())
+        self.update_callable(self.iid, self.update_image_data())
+        self.thresh, self.brs = generate_thresholded_image(image=self.image, k=self.k, pad=self.padding)
+        self.show_image(pad=self.padding)
 
     # code to crop the image according to the defined boundingRects
     def crop_rects(self) -> None:
@@ -235,7 +201,7 @@ class CropWindow(Toplevel):
             self.update_ui_post_crop()
 
             # call update function
-            self.update_callable(self.iid, self.idx, None, None)
+            self.update_callable(iid=self.iid, image_data=self.update_image_data())
 
             self.is_cropped = True
 

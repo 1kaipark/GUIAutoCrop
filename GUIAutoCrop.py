@@ -15,6 +15,7 @@ from _tkinter import TclError
 import random
 
 from lib.crop_window import CropWindow
+from lib.image_data import ImageData
 
 from typing import Any
 
@@ -22,9 +23,7 @@ import os
 
 image_paths_list = None
 
-metadata_dict = {}
-names_thresholded_dict = {}
-names_brs_dict = {}
+image_data_dict = {}
 
 
 def load_images():
@@ -38,26 +37,19 @@ def load_images():
         try:
             tree.insert("", END, text=image_path, values=(fname, 'No', None), iid=fname)
         except TclError:
-            # if the IID is already taken, just append a random digit to it. good enough for government work
-            tree.insert("", END, text=image_path, values=(fname, 'No', None), iid=f'{fname}_{random.randint(0, 10)}')
+            # if the IID is already taken, the image is already in the tree (unless something super weird happened.)
+            pass
+        image_data_dict[fname] = ImageData()
 
-def update_metadata(iid: Any, valid_indices: list, thresholded_image: Any, brs: list[Any]):
+def update_metadata(iid: Any, image_data: "ImageData"):
+    print('update callable', image_data.padding, image_data.idx)
     # this function will be called by the subwindow, and will update the dict
-
-    if valid_indices:
+    fname = iid[0] if isinstance(iid, tuple) else iid
+    image_data_dict[fname] = image_data
+    if image_data.idx is not None:
         # can be fed list of indices to update the treeview and internal storage dict
-        metadata_dict[iid] = valid_indices
-        fname = iid[0]
-        tree.item((iid, ), values=(fname, 'Yes', valid_indices))
-        print(metadata_dict)
-
-    if thresholded_image is not None and brs:
-        # store these two in memory
-        names_thresholded_dict[iid] = thresholded_image
-        names_brs_dict[iid] = brs
-
-
-    # update treeview as well
+        tree.item((fname, ), values=(fname, image_data.padding, ','.join([str(i) for i in image_data.idx])))
+        print(image_data_dict)
 
 def on_item_click(event):
     selected_item = tree.selection()  # Get the selected item iid
@@ -66,34 +58,32 @@ def on_item_click(event):
 
 def show_subwindow(iid):
     fpath = tree.item(iid, option='text')
-    print("IID", iid)
-    print(names_thresholded_dict)
-    try:
-        thresh = names_thresholded_dict[iid]
-        brs = names_brs_dict[iid]
-    except KeyError:
-        thresh = None
-        brs = None
-    app = CropWindow(window, fpath, thresh, brs, update_metadata, iid)
+    fname = os.path.split(fpath)[-1]
+    app = CropWindow(master=window, 
+                     image_path=fpath, 
+                     update_callable=update_metadata, 
+                     iid=iid, 
+                     image_data=image_data_dict[fname])
 
     # TODO!
     print(app.image_title)
     try:
-        idx = metadata_dict[iid]
-    except KeyError:
+        idx = image_data_dict[fname].idx
+        padding = image_data_dict[fname].padding
+    except Exception:
         idx = None
-    fname = iid[0]
+        padding = None
 
-    tree.item(iid, values=(fname, 'Yes', idx))
+    tree.item(iid, values=(fname, padding, idx))
 
 
 window = Tk()
 window.title("Select Slides")
 
-tree = ttk.Treeview(master=window, columns=('fname', 'processed', 'crop_indices'))
+tree = ttk.Treeview(master=window, columns=('fname', 'padding', 'crop_indices'))
 tree.heading('#0', text='Item')
 tree.heading('fname', text='File Name')
-tree.heading('processed', text='Viewed')
+tree.heading('padding', text='Padding')
 tree.heading('crop_indices', text='Cropping Indices')
 
 # bind to single click

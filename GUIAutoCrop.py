@@ -23,77 +23,85 @@ import os
 
 image_paths_list = None
 
-image_data_dict = {}
 
 
-def load_images():
-    global image_paths_list
-    root = Tk()
-    root.withdraw()
-    image_paths_list = askopenfilenames(parent=root)
-    image_paths_list = sorted(image_paths_list)
-    for image_path in image_paths_list:
-        fname = os.path.split(image_path)[-1]
+class SlidesManager(object):
+    def __init__(self, master):
+        self.master = master
+        self.master.title('Select Slides')
+
+        self.image_paths_list = None
+        self.image_data_dict = {}
+
+        self.init_ui()
+
+    def init_ui(self) -> None:
+        self.tree = ttk.Treeview(master=self.master, columns=('fname', 'padding', 'crop_indices'))
+        self.tree.heading('#0', text='Item')
+        self.tree.heading('fname', text='File Name')
+        self.tree.heading('padding', text='Padding')
+        self.tree.heading('crop_indices', text='Cropping Indices')
+        # bind to single click
+        self.tree.bind("<ButtonRelease-1>", self.on_item_click)
+
+        self.open_files_button = Button(master=self.master, text="open files", command=self.load_images)
+
+        self.tree.grid(row=1, column=0)
+        self.open_files_button.grid(row=0, column=0)
+
+        self.master.resizable(False, False)
+
+
+    def load_images(self):
+        # self.master.withdraw()
+        self.image_paths_list = askopenfilenames(parent=self.master)
+        self.image_paths_list = sorted(self.image_paths_list)
+        for image_path in self.image_paths_list:
+            fname = os.path.split(image_path)[-1]
+            try:
+                self.tree.insert("", END, text=image_path, values=(fname, ImageData().padding, None), iid=fname)
+            except TclError:
+                # if the IID is already taken, the image is already in the tree (unless something super weird happened.)
+                pass
+            self.image_data_dict[fname] = ImageData() # initialize dict with empty containers
+
+    def update_metadata(self, iid: Any, image_data: "ImageData"):
+        print('update callable', image_data.padding, image_data.idx)
+        # this function will be called by the subwindow, and will update the dict
+        fname = iid[0] if isinstance(iid, tuple) else iid
+        self.image_data_dict[fname] = image_data
+        if image_data.idx is not None:
+            idx_str = ','.join([str(i) for i in image_data.idx])
+        else:
+            idx_str = None
+            # can be fed list of indices to update the treeview and internal storage dict
+        self.tree.item((fname, ), values=(fname, image_data.padding, idx_str))
+
+    def on_item_click(self, event):
+        selected_item = self.tree.selection()  # Get the selected item iid
+        self.show_subwindow(selected_item)
+
+
+    def show_subwindow(self, iid):
+        fpath = self.tree.item(iid, option='text')
+        fname = os.path.split(fpath)[-1]
+        app = CropWindow(master=self.master, 
+                        image_path=fpath, 
+                        update_callable=self.update_metadata, 
+                        iid=iid, 
+                        image_data=self.image_data_dict[fname])
+
+        # TODO!
         try:
-            tree.insert("", END, text=image_path, values=(fname, ImageData().padding, None), iid=fname)
-        except TclError:
-            # if the IID is already taken, the image is already in the tree (unless something super weird happened.)
-            pass
-        image_data_dict[fname] = ImageData() # initialize dict with empty containers
+            idx = self.image_data_dict[fname].idx
+            padding = self.image_data_dict[fname].padding
+        except Exception:
+            idx = None
+            padding = None
 
-def update_metadata(iid: Any, image_data: "ImageData"):
-    print('update callable', image_data.padding, image_data.idx)
-    # this function will be called by the subwindow, and will update the dict
-    fname = iid[0] if isinstance(iid, tuple) else iid
-    image_data_dict[fname] = image_data
-    if image_data.idx is not None:
-        idx_str = ','.join([str(i) for i in image_data.idx])
-    else:
-        idx_str = None
-        # can be fed list of indices to update the treeview and internal storage dict
-    tree.item((fname, ), values=(fname, image_data.padding, idx_str))
+        self.tree.item(iid, values=(fname, padding, idx))
 
-def on_item_click(event):
-    selected_item = tree.selection()  # Get the selected item iid
-    show_subwindow(selected_item)
-
-
-def show_subwindow(iid):
-    fpath = tree.item(iid, option='text')
-    fname = os.path.split(fpath)[-1]
-    app = CropWindow(master=window, 
-                     image_path=fpath, 
-                     update_callable=update_metadata, 
-                     iid=iid, 
-                     image_data=image_data_dict[fname])
-
-    # TODO!
-    try:
-        idx = image_data_dict[fname].idx
-        padding = image_data_dict[fname].padding
-    except Exception:
-        idx = None
-        padding = None
-
-    tree.item(iid, values=(fname, padding, idx))
-
-
-window = Tk()
-window.title("Select Slides")
-
-tree = ttk.Treeview(master=window, columns=('fname', 'padding', 'crop_indices'))
-tree.heading('#0', text='Item')
-tree.heading('fname', text='File Name')
-tree.heading('padding', text='Padding')
-tree.heading('crop_indices', text='Cropping Indices')
-
-# bind to single click
-tree.bind("<ButtonRelease-1>", on_item_click)
-
-open_files_button = Button(master=window, text="open files", command=load_images)
-
-tree.grid(row=1, column=0)
-open_files_button.grid(row=0, column=0)
-
-window.resizable(False, False)
-window.mainloop()
+if __name__ == "__main__":
+    root = Tk()
+    app = SlidesManager(root)
+    root.mainloop()

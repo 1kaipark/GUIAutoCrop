@@ -35,7 +35,7 @@ def load_images():
     for image_path in image_paths_list:
         fname = os.path.split(image_path)[-1]
         try:
-            tree.insert("", END, text=image_path, values=(fname, 'No', None), iid=fname)
+            tree.insert("", END, text=image_path, values=(fname, ImageData().padding, None), iid=fname)
         except TclError:
             # if the IID is already taken, the image is already in the tree (unless something super weird happened.)
             pass
@@ -47,9 +47,11 @@ def update_metadata(iid: Any, image_data: "ImageData"):
     fname = iid[0] if isinstance(iid, tuple) else iid
     image_data_dict[fname] = image_data
     if image_data.idx is not None:
+        idx_str = ','.join([str(i) for i in image_data.idx])
+    else:
+        idx_str = None
         # can be fed list of indices to update the treeview and internal storage dict
-        tree.item((fname, ), values=(fname, image_data.padding, ','.join([str(i) for i in image_data.idx])))
-        print(image_data_dict)
+    tree.item((fname, ), values=(fname, image_data.padding, idx_str))
 
 def on_item_click(event):
     selected_item = tree.selection()  # Get the selected item iid
@@ -66,7 +68,6 @@ def show_subwindow(iid):
                      image_data=image_data_dict[fname])
 
     # TODO!
-    print(app.image_title)
     try:
         idx = image_data_dict[fname].idx
         padding = image_data_dict[fname].padding

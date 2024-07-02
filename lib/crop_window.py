@@ -1,15 +1,6 @@
 """The sub-window for processing and cropping slides
 Souce: passing from subwindow to main window https://www.youtube.com/watch?v=wHeoWM4xv0U
 
-TODO: series of buttons like 
-* 'Raise Threshold', 'Lower Threshold'
-* Toggle Force Light BG, Toggle Force Dark BG
-* +10 Padding, -10 Padding
-* Ultimately want to make these sliders. Is there any way to make them automatically update when changed value?
-
-TODO: delete print statements
-TODO: (lazy so optional) if cropped, load indices and crop automatically 
-
  ／l、               
 （ﾟ､ ｡ ７         
   l  ~ヽ       
@@ -181,12 +172,10 @@ class CropWindow(Toplevel):
             # try to parse indices entry
             self.idx = self.valid_idx.get().split(',')
             self.idx = [int(i.strip()) for i in self.idx]
-            print(self.idx)
         except Exception:
             print("unable to parse input {}".format(self.valid_idx.get()))
             return 0
 
-        print(self.image, self.brs)
         if (self.image is not None and self.brs is not None):
             print('will attempt to crop image of size {} into {} rects.'.format(self.image.shape, len(self.brs)))
             # crop the images and save to self.cropped_images list

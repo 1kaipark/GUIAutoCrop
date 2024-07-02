@@ -13,7 +13,19 @@ class ImageData(object):
     @property
     def _dict(self):
         return OrderedDict(
-            [('thresholded_image', self.thresh),
-             ('bounding_rects', self.brs),
-             ('valid_indices', self.idx)]
+            [('thresh', self.thresh),
+             ('brs', self.brs),
+             ('idx', self.idx),
+             ('padding', self.padding)]
         )
+    def __getitem__(self, item):
+        return self._dict[item]
+    
+    def __setitem__(self, *args, **kwargs):
+        raise Exception('Assign to attributes instead of item assignment.')
+    
+    def __str__(self):
+        return f"ImageData({[item for item in self._dict.items()]})"
+    
+    def __repr__(self):
+        return f"ImageData({[item for item in self._dict.items()]})"

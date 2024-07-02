@@ -61,7 +61,6 @@ class CropWindow(Toplevel):
         self.padding = image_data.padding # padding of cropping rects
 
         self.cropped_images = [] # list of ndarrays corresponding to each cropped section
-        self.is_cropped = False
 
         # valid indices input entry
         self.valid_idx = StringVar()
@@ -135,7 +134,6 @@ class CropWindow(Toplevel):
                 self.thresh is None and
                 self.brs is None):
             self.title('Processing Image') # update status as title
-            self.is_cropped = False # use this to keep tabs on whether the image is cropped
             self.thresh, self.brs = generate_thresholded_image(self.image, self.k, pad)
 
         fig = Figure()
@@ -174,9 +172,8 @@ class CropWindow(Toplevel):
 
     def update_padding(self) -> None:
         self.padding = int(self.pad_spinbox.get())
-        self.update_callable(self.iid, self.update_image_data())
         self.thresh, self.brs = generate_thresholded_image(image=self.image, k=self.k, pad=self.padding)
-        self.show_image(pad=self.padding)
+        self.show_image(pad=self.padding) # update callable is called here
 
     # code to crop the image according to the defined boundingRects
     def crop_rects(self) -> None:
@@ -202,8 +199,6 @@ class CropWindow(Toplevel):
 
             # call update function
             self.update_callable(iid=self.iid, image_data=self.update_image_data())
-
-            self.is_cropped = True
 
         if len(self.cropped_images) != 0:
             self.image_shown = False # the OG/processed image is no longer shown
@@ -231,8 +226,6 @@ class CropWindow(Toplevel):
             canvas.draw()
 
             canvas.get_tk_widget().grid(row=2, column=0)
-
-            self.is_cropped = True
             self.rotate_button.grid(row=5, column=0)
 
 
@@ -262,7 +255,6 @@ class CropWindow(Toplevel):
             canvas.draw()
 
             canvas.get_tk_widget().grid(row=2, column=0)
-            self.is_cropped = True
             self.rotate_button.grid(row=5, column=0)
 
     def write_images(self) -> None:

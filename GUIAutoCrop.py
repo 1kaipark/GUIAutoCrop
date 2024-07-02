@@ -39,7 +39,7 @@ def load_images():
         except TclError:
             # if the IID is already taken, the image is already in the tree (unless something super weird happened.)
             pass
-        image_data_dict[fname] = ImageData()
+        image_data_dict[fname] = ImageData() # initialize dict with empty containers
 
 def update_metadata(iid: Any, image_data: "ImageData"):
     print('update callable', image_data.padding, image_data.idx)

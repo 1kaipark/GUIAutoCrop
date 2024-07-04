@@ -18,27 +18,38 @@ def split_channels(img: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]
     blue_ch = cv.merge([zero, zero, b])
     return red_ch, green_ch, blue_ch
 
-def erode(img: np.ndarray, iterations: int = 2, kernel_size: int = 3) -> np.ndarray:
+def erode(img: np.ndarray, iterations: int=2, kernel_size: int=3) -> np.ndarray:
     """applies erosion according to the specified parameters"""
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     img = cv.erode(img, kernel, iterations = iterations, anchor = (1, 1))
     return img
 
-def dilate(img: np.ndarray, iterations: int = 2, kernel_size: int = 3) -> np.ndarray:
+def dilate(img: np.ndarray, iterations: int=2, kernel_size: int=3) -> np.ndarray:
     """applies erosion according to the specified parameters"""
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     img = cv.dilate(img, kernel, iterations = iterations, anchor = (1, 1))
     return img 
 
-def generate_thresholded_image(image: np.ndarray, k: int = 4, pad: int = 50) -> tuple[np.ndarray, list]:
+def generate_thresholded_image(image: np.ndarray,
+                               k: int = 4, 
+                               pad: int = 50, 
+                               erosion: bool=False,
+                               erosion_iterations: int=2,
+                               clahe_clip_limit: float=1.0,
+                               clahe_tile_grid_size: tuple[int, int] = (4, 4)) -> tuple[np.ndarray, list]:
     """takes args image: the image to be thresholded,
     k: modulates threshold intensity for calculation of contours,
-    pad: padding to add to the rectangles"""
+    pad: padding to add to the rectangles
+    erosion: perform erosion operation
+    erosion_iterations: how many iterations for the erosion operation
+    clahe_clip_limit, clahe_tile_grid_size: settings for CLAHE contrast adjustment"""
     iseg = ImageSegmenter()
     r, g, b = split_channels(image)
 
-    # b = erode(b, iterations = 2) # run on blue channel; erode to reduce noise
-    clahe = cv.createCLAHE(clipLimit=1.0, tileGridSize=(4,4)) # enhance contrast
+    if erosion:
+        b = erode(b, iterations = 2) # run on blue channel; erode to reduce noise
+
+    clahe = cv.createCLAHE(clipLimit=clahe_clip_limit, tileGridSize=clahe_tile_grid_size) # enhance contrast
     b = clahe.apply(b[:,:,2])
 
     t = iseg._threshold_image(b, k = k, lightbg = 'auto', darkbg = 'auto')

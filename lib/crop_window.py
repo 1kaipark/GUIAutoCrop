@@ -27,12 +27,14 @@ from .image_data import ImageData
 
 from typing import Callable, Any
 
+
 class CropWindow(Toplevel):
     def __init__(self, 
                  root: Tk, 
                  image_path: str, 
                  update_callable: Callable[["ImageData"], Any],
-                 image_data: "ImageData" = ImageData()) -> None:
+                 image_data: "ImageData" = ImageData(),
+                 config: dict = None) -> None:
 
         """Initialize the class --
         * 'root' -- tkinter root,
@@ -66,6 +68,8 @@ class CropWindow(Toplevel):
 
         # these parameters are for the object detection and cropping. stored internally
         self.k = 5 # default value
+
+        self.config = config
 
         # initialize UI
         self.create_widgets()
@@ -132,7 +136,13 @@ class CropWindow(Toplevel):
         if (self.image is not None and 
                 self.thresh is None and
                 self.brs is None):
-            self.thresh, self.brs = generate_thresholded_image(self.image, self.k, pad)
+            self.thresh, self.brs = generate_thresholded_image(image=self.image,
+                                                               k=self.k,
+                                                               pad=pad,
+                                                               erosion=self.config['erosion'],
+                                                               erosion_iterations=self.config['erosion_iterations'],
+                                                               clahe_clip_limit=self.config['clahe_clip_limit'],
+                                                               clahe_tile_grid_size=self.config['clahe_tile_grid_size'])
 
         fig = Figure()
         plot = fig.add_subplot()

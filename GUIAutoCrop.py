@@ -19,7 +19,8 @@ from lib.image_data import ImageData
 
 from typing import Any
 
-import os
+import os 
+import json
 
 image_paths_list = None
 
@@ -35,6 +36,10 @@ class SlidesManager(object):
 
         self.create_widgets()
 
+        with open('config.json', 'rb') as fi:
+            self.config = json.load(fi)
+
+
     def create_widgets(self) -> None:
         """Initialize UI elements"""
         self.tree = ttk.Treeview(master=self.root, columns=('fname', 'padding', 'crop_indices'))
@@ -46,9 +51,11 @@ class SlidesManager(object):
         self.tree.bind("<ButtonRelease-1>", self.on_item_click)
 
         self.open_files_button = Button(master=self.root, text="open files", command=self.load_images)
+        self.clear_files_button = Button(master=self.root, text="clear files", command=self.clear_files)
 
-        self.tree.grid(row=1, column=0)
+        self.tree.grid(row=2, column=0)
         self.open_files_button.grid(row=0, column=0)
+        self.clear_files_button.grid(row=1, column=0)
 
         self.root.resizable(False, False)
 
@@ -65,6 +72,13 @@ class SlidesManager(object):
                 # if the IID is already taken, the image is already in the tree (unless something super weird happened.)
                 pass
             self.image_data_dict[fname] = ImageData(image_id=fname) # initialize dict with empty containers
+
+    def clear_files(self) -> None:
+        self.image_paths_list = []
+        self.image_data_dict = {}
+
+        for i in self.tree.get_children():
+            self.tree.delete(i)
 
     def update_metadata(self, image_data: "ImageData"):
         print('update callable', image_data.padding, image_data.idx)
@@ -90,7 +104,8 @@ class SlidesManager(object):
         app = CropWindow(root=self.root, 
                         image_path=fpath, 
                         update_callable=self.update_metadata,  
-                        image_data=self.image_data_dict[fname])
+                        image_data=self.image_data_dict[fname],
+                        config=self.config)
 
         # TODO!
         idx = self.image_data_dict[fname].idx

@@ -1,0 +1,6 @@
+{
+  "erosion": true,
+  "erosion_iterations": 4,
+  "clahe_clip_limit": 1.5,
+  "clahe_tile_grid_size": [2, 2]
+}

@@ -4,7 +4,8 @@ import numpy as np
 
 class ImageData(object):
     """Container class to store image metadata"""
-    def __init__(self, thresh: np.ndarray = None, brs: list[Any] = None, idx: list[Any] = None, padding: int = 50):
+    def __init__(self, image_id: str = '', thresh: np.ndarray = None, brs: list[Any] = None, idx: list[Any] = None, padding: int = 50):
+        self.image_id = image_id
         self.thresh = thresh
         self.brs = brs
         self.idx = idx

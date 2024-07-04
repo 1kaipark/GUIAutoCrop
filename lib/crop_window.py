@@ -29,27 +29,33 @@ from .image_data import ImageData
 from typing import Callable, Any
 
 class CropWindow(Toplevel):
-    def __init__(self, master: Tk, image_path: str, update_callable: Callable, iid: Any, image_data: "ImageData" = ImageData()) -> None:
+    def __init__(self, 
+                 master: Tk, 
+                 image_path: str, 
+                 update_callable: Callable[["ImageData"], None],
+                 image_data: "ImageData" = ImageData()) -> None:
+
+        """Initialize the class --
+        * 'master' -- tkinter root,
+        * 'image_path' -- path to image to be parsed.
+        * 'image_data' -- ImageData object that contains attributes,
+        * 'update_callable' -- communicate with parent window"""
         super().__init__(master)
 
-        # this is used to pass to update function to update the tree view
-        self.iid = iid
-
         self.image_path = image_path 
-
-        # parse title from file path
-        self.image_title = self.image_path.split('/')[-1].split('.')[0] # title of image
-        self.title(self.image_title)
 
         # load image_path into array self.image
         self.image = load_img_array(self.image_path)
 
 
-        # globally store these
+        # this information is stored in an ImageData object 
+        self.iid = image_data.image_id # image identifier, useful for TreeView
         self.thresh = image_data.thresh # the thresholded image
         self.brs = image_data.brs # list of boundingRects (tuple[x,y,w,h])
         self.idx = image_data.idx # indices of bounding rects to crop by
         self.padding = image_data.padding # padding of cropping rects
+
+        self.title(self.iid)
 
         self.cropped_images = [] # list of ndarrays corresponding to each cropped section
 
@@ -65,7 +71,8 @@ class CropWindow(Toplevel):
         # initialize UI
         self.init_ui()
 
-    def init_ui(self) -> None: # initialize UI elements
+    def init_ui(self) -> None: 
+        """Initialize UI Elements"""
         self.show_image_button = Button(self, command=self.show_image,
                                         height=2, width=10, text = 'Process')
         self.show_image_button.grid(row=1, column=0)
@@ -97,11 +104,12 @@ class CropWindow(Toplevel):
         if self.thresh is not None and self.brs is not None:
             self.show_image(pad=self.padding)
 
-    def update_image_data(self):
-        return ImageData(thresh=self.thresh, brs=self.brs, idx=self.idx, padding=self.padding)
+    def update_image_data(self) -> "ImageData":
+        """Returns ImageData object with updated attributes"""
+        return ImageData(image_id=self.iid, thresh=self.thresh, brs=self.brs, idx=self.idx, padding=self.padding)
 
     def update_ui(self) -> None:
-        # once the image is processed, grid everything
+        """Called once image is processed, places the rest of the UI"""
         self.pad_label.grid(row=1, column=4)
         self.pad_spinbox.grid(row=1, column=5)
         self.update_padding_btn.grid(row=1, column=6)
@@ -115,23 +123,23 @@ class CropWindow(Toplevel):
         self.crop_button.grid(row=3, column=6)
 
     def update_ui_post_crop(self) -> None:
+        """Shows the rotate button"""
         self.rotate_button.grid(row=5, column=4)
         self.save_button.grid(row=5, column=5)
 
     # function to process (threshold, display indices) passed image to init
     def show_image(self, pad: int = 50) -> None:
-        # self.image
+        """Processes the image -- threshold, bounding rects + indices"""
         if (self.image is not None and 
                 self.thresh is None and
                 self.brs is None):
-            self.title('Processing Image') # update status as title
             self.thresh, self.brs = generate_thresholded_image(self.image, self.k, pad)
 
         fig = Figure()
         plot = fig.add_subplot()
 
         # pass thresh and brs to update function
-        self.update_callable(iid=self.iid, image_data = self.update_image_data())
+        self.update_callable(image_data = self.update_image_data())
 
         # show on plot widget
         plot.imshow(self.thresh)
@@ -155,19 +163,19 @@ class CropWindow(Toplevel):
         canvas = FigureCanvasTkAgg(fig, master=self)
         canvas.draw()
 
-        self.title(self.image_title)
-
         canvas.get_tk_widget().grid(row=2, column=0)
         self.update_ui()
 
 
     def update_padding(self) -> None:
+        """Called to update the padding"""
         self.padding = int(self.pad_spinbox.get())
         self.thresh, self.brs = generate_thresholded_image(image=self.image, k=self.k, pad=self.padding)
         self.show_image(pad=self.padding) # update callable is called here
 
-    # code to crop the image according to the defined boundingRects
+    
     def crop_rects(self) -> None:
+        """code to crop the image according to the defined boundingRects"""
         try:
             # try to parse indices entry
             self.idx = self.valid_idx.get().split(',')
@@ -187,10 +195,9 @@ class CropWindow(Toplevel):
             self.update_ui_post_crop()
 
             # call update function
-            self.update_callable(iid=self.iid, image_data=self.update_image_data())
+            self.update_callable(image_data=self.update_image_data())
 
         if len(self.cropped_images) != 0:
-            self.image_shown = False # the OG/processed image is no longer shown
             fig = Figure()
             plot = fig.subplots(1, len(self.idx))
             if len(self.cropped_images) > 1:

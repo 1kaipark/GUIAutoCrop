@@ -26,7 +26,8 @@ image_paths_list = None
 
 
 class SlidesManager(object):
-    def __init__(self, master):
+    def __init__(self, master) -> None:
+        """Initialize Class"""
         self.master = master
         self.master.title('Select Slides')
 
@@ -36,6 +37,7 @@ class SlidesManager(object):
         self.init_ui()
 
     def init_ui(self) -> None:
+        """Initialize UI elements"""
         self.tree = ttk.Treeview(master=self.master, columns=('fname', 'padding', 'crop_indices'))
         self.tree.heading('#0', text='Item')
         self.tree.heading('fname', text='File Name')
@@ -52,8 +54,8 @@ class SlidesManager(object):
         self.master.resizable(False, False)
 
 
-    def load_images(self):
-        # self.master.withdraw()
+    def load_images(self) -> None:
+        """Called by the load images button. Opens a file dialog to choose slide images"""
         self.image_paths_list = askopenfilenames(parent=self.master)
         self.image_paths_list = sorted(self.image_paths_list)
         for image_path in self.image_paths_list:
@@ -63,12 +65,13 @@ class SlidesManager(object):
             except TclError:
                 # if the IID is already taken, the image is already in the tree (unless something super weird happened.)
                 pass
-            self.image_data_dict[fname] = ImageData() # initialize dict with empty containers
+            self.image_data_dict[fname] = ImageData(image_id=fname) # initialize dict with empty containers
 
-    def update_metadata(self, iid: Any, image_data: "ImageData"):
+    def update_metadata(self, image_data: "ImageData"):
         print('update callable', image_data.padding, image_data.idx)
+
         # this function will be called by the subwindow, and will update the dict
-        fname = iid[0] if isinstance(iid, tuple) else iid
+        fname = image_data.image_id
         self.image_data_dict[fname] = image_data
         if image_data.idx is not None:
             idx_str = ','.join([str(i) for i in image_data.idx])
@@ -87,17 +90,12 @@ class SlidesManager(object):
         fname = os.path.split(fpath)[-1]
         app = CropWindow(master=self.master, 
                         image_path=fpath, 
-                        update_callable=self.update_metadata, 
-                        iid=iid, 
+                        update_callable=self.update_metadata,  
                         image_data=self.image_data_dict[fname])
 
         # TODO!
-        try:
-            idx = self.image_data_dict[fname].idx
-            padding = self.image_data_dict[fname].padding
-        except Exception:
-            idx = None
-            padding = None
+        idx = self.image_data_dict[fname].idx
+        padding = self.image_data_dict[fname].padding
 
         self.tree.item(iid, values=(fname, padding, idx))
 

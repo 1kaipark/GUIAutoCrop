@@ -4,16 +4,28 @@ import numpy as np
 import scipy.ndimage as ndimage
 from skimage.morphology import square
 from skimage.exposure import adjust_gamma
-from skimage.filters import threshold_minimum, threshold_otsu, threshold_triangle, threshold_mean, threshold_isodata, sobel, rank
+from skimage.filters import (
+    threshold_minimum,
+    threshold_otsu,
+    threshold_triangle,
+    threshold_mean,
+    threshold_isodata,
+    sobel,
+    rank,
+)
+
 # from autoanalysis.processmodules.imagecrop.ImageSegmentation import ImageSegmentation
 
 K_Clusters = 2
 BGPCOUNT = 40  # Background Pixel Count: Pixel length of the squares to be used in the image corners to be considered
 # background
-SENSITIVITY_THRESHOLD = .01  # Sensitivity for K means iterating. smaller threshold means a more accurate threshold.
-MAX_NOISE_AREA = 280 # Max area (pixels) of a slice for it to be still considered noise
+SENSITIVITY_THRESHOLD = 0.01  # Sensitivity for K means iterating. smaller threshold means a more accurate threshold.
+MAX_NOISE_AREA = 280  # Max area (pixels) of a slice for it to be still considered noise
 
-DELTAX, DELTAY = (0, 0)  # (20, 50) # How close in both directions a slice can be to another to be considered the same image
+DELTAX, DELTAY = (
+    0,
+    0,
+)  # (20, 50) # How close in both directions a slice can be to another to be considered the same image
 IMAGEX, IMAGEY = (3000, 1200)  # Size of image to use when segmenting the image.
 
 
@@ -39,16 +51,18 @@ class ImageSegmenter(object):
         # Step 1
         # binary_image = ImageSegmenter._threshold_image(misc.imresize(image_array, size=(IMAGEY, IMAGEX)), K_Clusters)
 
-        binary_image = ImageSegmenter._threshold_image(image_array, K_Clusters, lightbg, darkbg)
+        binary_image = ImageSegmenter._threshold_image(
+            image_array, K_Clusters, lightbg, darkbg
+        )
         # Step 2
         opened_image = ImageSegmenter._image_dilation(binary_image)
         closed_image = ImageSegmenter._noise_reduction(opened_image)
         binary_image = ndimage.binary_fill_holes(closed_image.astype(int))
 
-        #opened_image = ImageSegmenter._image_dilation(closed_image)
+        # opened_image = ImageSegmenter._image_dilation(closed_image)
         # Step 3 & 4
-        #closed_image = ImageSegmenter._noise_reduction(opened_image)
-       # opened_image = ImageSegmenter._image_dilation(closed_image)
+        # closed_image = ImageSegmenter._noise_reduction(opened_image)
+        # opened_image = ImageSegmenter._image_dilation(closed_image)
         segments = ImageSegmenter._apply_object_detection(binary_image)
         # NOT WORKING PROPERLY  .change_segment_bounds(border_factor)
         return segments
@@ -62,25 +76,34 @@ class ImageSegmenter(object):
         :return: a 2D binary image
         """
         channel_image = ImageSegmenter._optimal_thresholding_channel_image(image_array)
-        #histogram = ImageSegmenter._image_histogram(channel_image)
-        #cluster_vector = ImageSegmenter._k_means_iterate(histogram, k)
-        #has_light_bg = sum(histogram[0:50]) < sum(histogram[205:])
-        #t0_min = threshold_minimum(image_array)
+        # histogram = ImageSegmenter._image_histogram(channel_image)
+        # cluster_vector = ImageSegmenter._k_means_iterate(histogram, k)
+        # has_light_bg = sum(histogram[0:50]) < sum(histogram[205:])
+        # t0_min = threshold_minimum(image_array)
 
-        if (lightbg == 'auto' and darkbg == 'auto'):
+        if lightbg == "auto" and darkbg == "auto":
             # filter the image slightly
             sizefoot = [2, 2]
             channel_image = ndimage.median_filter(channel_image, sizefoot)
             channel_image = adjust_gamma(channel_image, gamma=1.4, gain=1)
             histogram = ImageSegmenter._image_histogram(channel_image)
-            t0_min = threshold_mean(channel_image[0:np.argwhere(channel_image).max(0)[0],0:np.argwhere(channel_image).max(0)[1]])
+            t0_min = threshold_mean(
+                channel_image[
+                    0 : np.argwhere(channel_image).max(0)[0],
+                    0 : np.argwhere(channel_image).max(0)[1],
+                ]
+            )
             has_light_bg = sum(histogram[0:5]) < sum(histogram[250:])
         else:
-            channel_image = ImageSegmenter._optimal_thresholding_channel_image(image_array)
+            channel_image = ImageSegmenter._optimal_thresholding_channel_image(
+                image_array
+            )
             histogram = ImageSegmenter._image_histogram(channel_image)
             t0_min = threshold_mean(channel_image)
             has_light_bg = sum(histogram[0:5]) < sum(histogram[250:])
-        return ImageSegmenter._apply_cluster_threshold(t0_min, channel_image, has_light_bg, lightbg, darkbg)  # ImageSegmenter._has_dark_objects(channel_image))
+        return ImageSegmenter._apply_cluster_threshold(
+            t0_min, channel_image, has_light_bg, lightbg, darkbg
+        )  # ImageSegmenter._has_dark_objects(channel_image))
 
     @staticmethod
     def _has_dark_objects(image):
@@ -88,7 +111,9 @@ class ImageSegmenter(object):
         :return: True if the image parameter has black foreground images on a light background, false otherwise.
         """
         mean_background_vector = ImageSegmenter._background_average_vector(image)
-        return (mean_background_vector > 127)  # light background => dark foreground objects
+        return (
+            mean_background_vector > 127
+        )  # light background => dark foreground objects
 
     @staticmethod
     def _background_average_vector(image):
@@ -101,8 +126,8 @@ class ImageSegmenter(object):
         background_corner_index_y_list = []
 
         # Add indices for each corner of the image
-        minAxis = min(x_dim,y_dim)
-        for i in range(round(minAxis*0.05)+1):
+        minAxis = min(x_dim, y_dim)
+        for i in range(round(minAxis * 0.05) + 1):
             for j in range(round(minAxis * 0.05) + 1):
                 background_corner_index_x_list.append(i)
                 background_corner_index_y_list.append(j)
@@ -120,10 +145,14 @@ class ImageSegmenter(object):
         #     background_corner_index_y_list.append(y_dim - (i + 1))
 
         if image.ndim == 3:
-            background_vector = image[background_corner_index_x_list, background_corner_index_y_list, :]
+            background_vector = image[
+                background_corner_index_x_list, background_corner_index_y_list, :
+            ]
             return np.median(np.median(background_vector, axis=1), axis=0)
         else:
-            background_vector = image[background_corner_index_x_list, background_corner_index_y_list]
+            background_vector = image[
+                background_corner_index_x_list, background_corner_index_y_list
+            ]
             return np.median(background_vector)
 
     @staticmethod
@@ -148,10 +177,14 @@ class ImageSegmenter(object):
         if image.ndim == 3:
             channel_mean_vector = np.mean(np.mean(image, axis=1), axis=0)
 
-            background_channel_mean_vector = ImageSegmenter._background_average_vector(image)
+            background_channel_mean_vector = ImageSegmenter._background_average_vector(
+                image
+            )
 
             # Choose channel for clustering based on maximum difference in background and average intensity
-            max_difference_channel = np.abs(background_channel_mean_vector - channel_mean_vector)
+            max_difference_channel = np.abs(
+                background_channel_mean_vector - channel_mean_vector
+            )
             clustering_channel = np.argmax(max_difference_channel)
             return image[:, :, clustering_channel]
         return image.copy()
@@ -187,7 +220,7 @@ class ImageSegmenter(object):
         cluster_vector = np.linspace(0, 255, num=kcluster)
         cluster_temp_vector = cluster_vector.copy()
 
-        while (1):
+        while 1:
 
             # Find closest cluster for each pixel intensity in histogram
             index_histogram = [closest_index(cluster_vector, i) for i in range(256)]
@@ -195,12 +228,20 @@ class ImageSegmenter(object):
             # for each cluster, find mean of clustered pixel intensities
             # histogram[i] is number of pixels at intensity i
             for k in range(kcluster):
-                weighted_mean_sum = sum(ind * histogram[ind] for ind in range(256) if index_histogram[ind] == k)
-                pixel_count = sum(histogram[ind] for ind in range(256) if index_histogram[ind] == k)
+                weighted_mean_sum = sum(
+                    ind * histogram[ind]
+                    for ind in range(256)
+                    if index_histogram[ind] == k
+                )
+                pixel_count = sum(
+                    histogram[ind] for ind in range(256) if index_histogram[ind] == k
+                )
                 cluster_temp_vector[k] = weighted_mean_sum / (pixel_count + 1)
 
             # If all clusters change less than the threshold -> finish iteration
-            if (np.abs((cluster_vector - cluster_temp_vector)) <= SENSITIVITY_THRESHOLD).all():
+            if (
+                np.abs((cluster_vector - cluster_temp_vector)) <= SENSITIVITY_THRESHOLD
+            ).all():
                 return cluster_temp_vector
             cluster_vector = cluster_temp_vector.copy()
 
@@ -217,29 +258,31 @@ class ImageSegmenter(object):
         """
 
         # Using 2nd index of 10 clusters for foreground (index found through testing)
-        if (darkObjects):
+        if darkObjects:
             # logging.info("Image currently being segmented is deemed to have a light background.")
-            if lightbg != 'auto' and int(lightbg) > 0 and int(lightbg) < 255:
+            if lightbg != "auto" and int(lightbg) > 0 and int(lightbg) < 255:
                 binary_threshold = int(lightbg)
             else:
                 binary_threshold = t0_min  # cluster_vector[-1]
-            msg = 'LIGHT bg: threshold=%d' % binary_threshold
+            msg = "LIGHT bg: threshold=%d" % binary_threshold
             print(msg)
             logging.info(msg)
             yy = np.zeros(channel_image.shape, dtype=np.uint8)
-            rtn = 255 * (yy+(channel_image < binary_threshold))
+            rtn = 255 * (yy + (channel_image < binary_threshold))
 
         else:
             # logging.info("Image currently being segmented is deemed to have a dark background.")
-            if darkbg != 'auto' and int(darkbg) > 0 and int(darkbg) < 255:
+            if darkbg != "auto" and int(darkbg) > 0 and int(darkbg) < 255:
                 binary_threshold = int(darkbg)
             else:
-                binary_threshold = t0_min  # cluster_vector[0] /2 #Correction for dark bg thresholding
-            msg = 'DARK bg: threshold=%d' % binary_threshold
+                binary_threshold = (
+                    t0_min  # cluster_vector[0] /2 #Correction for dark bg thresholding
+                )
+            msg = "DARK bg: threshold=%d" % binary_threshold
             print(msg)
             logging.info(msg)
             yy = np.zeros(channel_image.shape, dtype=np.uint8)
-            rtn = 255 * (yy+(channel_image > binary_threshold))
+            rtn = 255 * (yy + (channel_image > binary_threshold))
         return rtn
 
     @staticmethod
@@ -251,9 +294,8 @@ class ImageSegmenter(object):
         """
         struct_size = 2  # max(round(binary_image.size / 8000000), 2)
         structure = np.ones((struct_size, struct_size))
-        #binary_image = ndimage.gaussian_filter(binary_image.astype(int),sigma=0.1)
+        # binary_image = ndimage.gaussian_filter(binary_image.astype(int),sigma=0.1)
         return ndimage.binary_erosion(binary_image.astype(int), structure=structure)
-
 
     @staticmethod
     def _image_dilation(binary_image):
@@ -265,8 +307,10 @@ class ImageSegmenter(object):
         struct_size = 3  # int(min(binary_image.shape) * 0.01)
         structure = np.ones((2, 2))  # ((struct_size, struct_size))
         yy = np.zeros(binary_image.shape, dtype=np.uint8)
-        return ndimage.binary_dilation((yy + binary_image), structure=structure).astype(yy.dtype)
-        #return ndimage.median_filter(binary_image.astype(int), size=[1, 1])
+        return ndimage.binary_dilation((yy + binary_image), structure=structure).astype(
+            yy.dtype
+        )
+        # return ndimage.median_filter(binary_image.astype(int), size=[1, 1])
 
     @staticmethod
     def _apply_object_detection(morphological_image):
@@ -276,10 +320,14 @@ class ImageSegmenter(object):
         :return: A ImageSegmentation object
         """
         # segmentations = ImageSegmentation(IMAGEX, IMAGEY)
-        segmentations = ImageSegmentation(morphological_image.shape[0], morphological_image.shape[1])
+        segmentations = ImageSegmentation(
+            morphological_image.shape[0], morphological_image.shape[1]
+        )
 
         # Separate objects into separate labelled ints on matrix imlabelled
-        imlabeled, num_features = ndimage.measurements.label(morphological_image, output=np.dtype("int"))
+        imlabeled, num_features = ndimage.measurements.label(
+            morphological_image, output=np.dtype("int")
+        )
         labels = np.unique(imlabeled)
 
         # Iterate through range and make array of 0, 1, ..., len(labels)
@@ -308,7 +356,10 @@ class ImageSegmenter(object):
             if (a / totalarea) < fraction:
                 segmentations.segments.remove(bounding_box)
 
-        msg = "ObjectDetection: Features found: %d Segments created: %d" % (num_features, len(segmentations.segments))
+        msg = "ObjectDetection: Features found: %d Segments created: %d" % (
+            num_features,
+            len(segmentations.segments),
+        )
         logging.info(msg)
         print(msg)
         return segmentations
@@ -322,7 +373,9 @@ class ImageSegmenter(object):
         """
         y_slice = box[0]
         x_slice = box[1]
-        segmentation_object.add_segmentation(x_slice.start, y_slice.start, x_slice.stop, y_slice.stop)
+        segmentation_object.add_segmentation(
+            x_slice.start, y_slice.start, x_slice.stop, y_slice.stop
+        )
 
     @staticmethod
     def is_noise(s1):
@@ -344,21 +397,25 @@ class ImageSegmenter(object):
         if (s1[0].stop < s2[0].start) | (s1[0].start > s2[0].stop):
             return False
 
-        xx = np.zeros((max(s1[0].stop, s2[0].stop), max(s1[1].stop, s2[1].stop))).astype(int)
-        yy = np.zeros((max(s1[0].stop, s2[0].stop), max(s1[1].stop, s2[1].stop))).astype(int)
-        xx[s1[0].start:s1[0].stop, s1[1].start:s1[1].stop] = 1
-        yy[s2[0].start:s2[0].stop, s2[1].start:s2[1].stop] = 1
+        xx = np.zeros(
+            (max(s1[0].stop, s2[0].stop), max(s1[1].stop, s2[1].stop))
+        ).astype(int)
+        yy = np.zeros(
+            (max(s1[0].stop, s2[0].stop), max(s1[1].stop, s2[1].stop))
+        ).astype(int)
+        xx[s1[0].start : s1[0].stop, s1[1].start : s1[1].stop] = 1
+        yy[s2[0].start : s2[0].stop, s2[1].start : s2[1].stop] = 1
         zz = xx + yy
         if zz.max() == 2:
             return True
         else:
             return False
 
-        #elif (((s2[1].start <= s1[1].stop) and (s2[1].stop >= s1[1].start)) and ((s2[0].start <= s1[0].stop) and (s2[0].stop >= s1[0].start))):
+        # elif (((s2[1].start <= s1[1].stop) and (s2[1].stop >= s1[1].start)) and ((s2[0].start <= s1[0].stop) and (s2[0].stop >= s1[0].start))):
         #    return True
-        #else:
+        # else:
         #    return False
-        #return not (s1[1].stop < s2[1].start) | (s1[1].start > s2[1].stop)
+        # return not (s1[1].stop < s2[1].start) | (s1[1].start > s2[1].stop)
 
     @staticmethod
     def add(s1, s2):
@@ -421,10 +478,12 @@ class ImageSegmenter(object):
 
                 #  Since sorted, iterate through all boxes with intersecting x until box i is past box j
 
-                #while (not (x1.stop < x2.start) | (x1.start > x2.stop)) & (j < len(box_slices)):
-                while (j < len(box_slices)):
-                    if ImageSegmenter.intersect(x1,x2):
-                        temp_list.append(ImageSegmenter.add(box_slices.pop(j), box_slices.pop(i)))
+                # while (not (x1.stop < x2.start) | (x1.start > x2.stop)) & (j < len(box_slices)):
+                while j < len(box_slices):
+                    if ImageSegmenter.intersect(x1, x2):
+                        temp_list.append(
+                            ImageSegmenter.add(box_slices.pop(j), box_slices.pop(i))
+                        )
                         add_this_obj = False
                         j = len(box_slices)
                     else:
@@ -451,7 +510,7 @@ class ImageSegmenter(object):
             curr_len = len(box_slices)
             i = 0
 
-        #iterate over this twice to see if it helps join things that should have been joined the first time
+        # iterate over this twice to see if it helps join things that should have been joined the first time
         prev_len = len(box_slices)
         curr_len = len(box_slices)
         flag = True
@@ -477,9 +536,11 @@ class ImageSegmenter(object):
                 #  Since sorted, iterate through all boxes with intersecting x until box i is past box j
 
                 # while (not (x1.stop < x2.start) | (x1.start > x2.stop)) & (j < len(box_slices)):
-                while (j < len(box_slices)):
+                while j < len(box_slices):
                     if ImageSegmenter.intersect(x1, x2):
-                        temp_list.append(ImageSegmenter.add(box_slices.pop(j), box_slices.pop(i)))
+                        temp_list.append(
+                            ImageSegmenter.add(box_slices.pop(j), box_slices.pop(i))
+                        )
                         add_this_obj = False
                         j = len(box_slices)
                     else:

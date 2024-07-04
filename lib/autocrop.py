@@ -2,8 +2,33 @@ from .ImageSegmenter import ImageSegmenter
 import numpy as np
 import cv2 as cv
 import scipy.ndimage as ndimage
+from PIL import Image
 
-from .imgutil import split_channels, erode
+def load_img_array(ipath: str) -> np.ndarray:
+    """Load image as a numpy ndarray"""
+    return np.asarray(Image.open(ipath)) # use PIL to open, then return the array 
+
+def split_channels(img: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """returns red, green, blue channels from given RGB image array"""
+    r, g, b = img[:,:,0], img[:,:,1], img[:,:,2] # split channels, output grayscale
+    # return RGB images
+    zero = np.zeros(img.shape[0:2], np.uint8)  # zero array w same shape as image, must be 8-bit unsigned int
+    red_ch = cv.merge([r, zero, zero])
+    green_ch = cv.merge([zero, g, zero])
+    blue_ch = cv.merge([zero, zero, b])
+    return red_ch, green_ch, blue_ch
+
+def erode(img: np.ndarray, iterations: int = 2, kernel_size: int = 3) -> np.ndarray:
+    """applies erosion according to the specified parameters"""
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    img = cv.erode(img, kernel, iterations = iterations, anchor = (1, 1))
+    return img
+
+def dilate(img: np.ndarray, iterations: int = 2, kernel_size: int = 3) -> np.ndarray:
+    """applies erosion according to the specified parameters"""
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    img = cv.dilate(img, kernel, iterations = iterations, anchor = (1, 1))
+    return img 
 
 def generate_thresholded_image(image: np.ndarray, k: int = 4, pad: int = 50) -> tuple[np.ndarray, list]:
     """takes args image: the image to be thresholded,

@@ -14,7 +14,8 @@ class ImageData(object):
     @property
     def _dict(self):
         return OrderedDict(
-            [('thresh', self.thresh),
+            [('image_id', self.image_id),
+             ('thresh', self.thresh),
              ('brs', self.brs),
              ('idx', self.idx),
              ('padding', self.padding)]

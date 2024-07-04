@@ -22,8 +22,7 @@ import cv2 as cv
 
 import os
 
-from .imgutil import load_img_array
-from .autocrop import generate_thresholded_image, get_cropped_images
+from .autocrop import load_img_array, generate_thresholded_image, get_cropped_images
 from .image_data import ImageData
 
 from typing import Callable, Any

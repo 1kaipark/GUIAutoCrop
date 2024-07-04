@@ -12,7 +12,7 @@ class ImageData(object):
         self.padding = padding
 
     @property
-    def _dict(self):
+    def _dict(self) -> OrderedDict:
         return OrderedDict(
             [('image_id', self.image_id),
              ('thresh', self.thresh),
@@ -20,14 +20,11 @@ class ImageData(object):
              ('idx', self.idx),
              ('padding', self.padding)]
         )
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> Any:
         return self._dict[item]
-    
-    def __setitem__(self, *args, **kwargs):
-        raise Exception('Assign to attributes instead of item assignment.')
-    
-    def __str__(self):
-        return f"ImageData({[item for item in self._dict.items()]})"
-    
+
     def __repr__(self):
         return f"ImageData({[item for item in self._dict.items()]})"
+    
+    def __str__(self):
+        return self.__repr__

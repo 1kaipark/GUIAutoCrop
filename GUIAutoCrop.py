@@ -26,19 +26,18 @@ image_paths_list = None
 
 
 class SlidesManager(object):
-    def __init__(self, master) -> None:
+    def __init__(self, root: Tk) -> None:
         """Initialize Class"""
-        self.master = master
-        self.master.title('Select Slides')
+        self.root = root
 
         self.image_paths_list = None
         self.image_data_dict = {}
 
-        self.init_ui()
+        self.create_widgets()
 
-    def init_ui(self) -> None:
+    def create_widgets(self) -> None:
         """Initialize UI elements"""
-        self.tree = ttk.Treeview(master=self.master, columns=('fname', 'padding', 'crop_indices'))
+        self.tree = ttk.Treeview(master=self.root, columns=('fname', 'padding', 'crop_indices'))
         self.tree.heading('#0', text='Item')
         self.tree.heading('fname', text='File Name')
         self.tree.heading('padding', text='Padding')
@@ -46,17 +45,17 @@ class SlidesManager(object):
         # bind to single click
         self.tree.bind("<ButtonRelease-1>", self.on_item_click)
 
-        self.open_files_button = Button(master=self.master, text="open files", command=self.load_images)
+        self.open_files_button = Button(master=self.root, text="open files", command=self.load_images)
 
         self.tree.grid(row=1, column=0)
         self.open_files_button.grid(row=0, column=0)
 
-        self.master.resizable(False, False)
+        self.root.resizable(False, False)
 
 
     def load_images(self) -> None:
         """Called by the load images button. Opens a file dialog to choose slide images"""
-        self.image_paths_list = askopenfilenames(parent=self.master)
+        self.image_paths_list = askopenfilenames(parent=self.root)
         self.image_paths_list = sorted(self.image_paths_list)
         for image_path in self.image_paths_list:
             fname = os.path.split(image_path)[-1]
@@ -88,7 +87,7 @@ class SlidesManager(object):
     def show_subwindow(self, iid):
         fpath = self.tree.item(iid, option='text')
         fname = os.path.split(fpath)[-1]
-        app = CropWindow(master=self.master, 
+        app = CropWindow(root=self.root, 
                         image_path=fpath, 
                         update_callable=self.update_metadata,  
                         image_data=self.image_data_dict[fname])
@@ -101,5 +100,7 @@ class SlidesManager(object):
 
 if __name__ == "__main__":
     root = Tk()
+    root.title('Select Slides')
+    root.attributes("-alpha", 0.95)
     app = SlidesManager(root)
     root.mainloop()

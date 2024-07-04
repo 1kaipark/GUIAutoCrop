@@ -29,17 +29,17 @@ from typing import Callable, Any
 
 class CropWindow(Toplevel):
     def __init__(self, 
-                 master: Tk, 
+                 root: Tk, 
                  image_path: str, 
-                 update_callable: Callable[["ImageData"], None],
+                 update_callable: Callable[["ImageData"], Any],
                  image_data: "ImageData" = ImageData()) -> None:
 
         """Initialize the class --
-        * 'master' -- tkinter root,
+        * 'root' -- tkinter root,
         * 'image_path' -- path to image to be parsed.
         * 'image_data' -- ImageData object that contains attributes,
         * 'update_callable' -- communicate with parent window"""
-        super().__init__(master)
+        super().__init__(root)
 
         self.image_path = image_path 
 
@@ -68,9 +68,9 @@ class CropWindow(Toplevel):
         self.k = 5 # default value
 
         # initialize UI
-        self.init_ui()
+        self.create_widgets()
 
-    def init_ui(self) -> None: 
+    def create_widgets(self) -> None: 
         """Initialize UI Elements"""
         self.show_image_button = Button(self, command=self.show_image,
                                         height=2, width=10, text = 'Process')
@@ -107,7 +107,7 @@ class CropWindow(Toplevel):
         """Returns ImageData object with updated attributes"""
         return ImageData(image_id=self.iid, thresh=self.thresh, brs=self.brs, idx=self.idx, padding=self.padding)
 
-    def update_ui(self) -> None:
+    def update_widgets(self) -> None:
         """Called once image is processed, places the rest of the UI"""
         self.pad_label.grid(row=1, column=4)
         self.pad_spinbox.grid(row=1, column=5)
@@ -121,7 +121,7 @@ class CropWindow(Toplevel):
             self.valid_idx_entry.insert(0, ','.join([str(i) for i in self.idx]))
         self.crop_button.grid(row=3, column=6)
 
-    def update_ui_post_crop(self) -> None:
+    def update_widgets_post_crop(self) -> None:
         """Shows the rotate button"""
         self.rotate_button.grid(row=5, column=4)
         self.save_button.grid(row=5, column=5)
@@ -163,7 +163,7 @@ class CropWindow(Toplevel):
         canvas.draw()
 
         canvas.get_tk_widget().grid(row=2, column=0)
-        self.update_ui()
+        self.update_widgets()
 
 
     def update_padding(self) -> None:
@@ -191,7 +191,7 @@ class CropWindow(Toplevel):
                                                       brs=self.brs)
             print("{} images cropped".format(len(self.cropped_images)))
 
-            self.update_ui_post_crop()
+            self.update_widgets_post_crop()
 
             # call update function
             self.update_callable(image_data=self.update_image_data())
@@ -246,7 +246,7 @@ class CropWindow(Toplevel):
 
             fig.tight_layout(pad=0)
 
-            canvas = FigureCanvasTkAgg(fig, master=self)
+            canvas = FigureCanvasTkAgg(fig, root=self)
             canvas.draw()
 
             canvas.get_tk_widget().grid(row=2, column=0)

@@ -16,7 +16,7 @@
 * would be cool (but ambitious): interactive rect plot to resize the rectangles
 
 * Use and keep record of bugs to fix
-  * bug: selecting an image, not cropping, then selecting another image will update the image in memory but will not display. this is due to the bool I have that ensures images won't be displayed twice.
+  * 
 
 
 ```

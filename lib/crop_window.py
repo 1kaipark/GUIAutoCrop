@@ -266,7 +266,7 @@ class CropWindow(Toplevel):
 
             fig.tight_layout(pad=0)
 
-            canvas = FigureCanvasTkAgg(fig, root=self)
+            canvas = FigureCanvasTkAgg(fig, master=self)
             canvas.draw()
 
             canvas.get_tk_widget().grid(row=2, column=0)
@@ -280,7 +280,7 @@ class CropWindow(Toplevel):
 
             for crop_indices, o in enumerate(self.cropped_images):
                 out_img = PILImage.fromarray(o)
-                out_name = "{}_s{}".format(self.image_title, str(crop_indices + 1).zfill(3))
+                out_name = "{}_s{}".format(self.iid, str(crop_indices + 1).zfill(3))
                 out_path = os.path.join(save_path, out_name)
                 out_img.save(out_path + ".png")
 

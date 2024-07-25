@@ -1,24 +1,17 @@
+from dataclasses import dataclass, field
 from collections import OrderedDict
-from typing import Any
+from typing import Any, List, Optional
 import numpy as np
 
-
-class ImageData(object):
+@dataclass
+class ImageData:
     """Container class to store image metadata"""
 
-    def __init__(
-        self,
-        image_id: str = "",
-        thresh: np.ndarray = None,
-        brs: list[Any] = None,
-        crop_indices: list[Any] = None,
-        padding: int = 50,
-    ):
-        self.image_id = image_id
-        self.thresh = thresh
-        self.brs = brs
-        self.crop_indices = crop_indices
-        self.padding = padding
+    image_id: str = ""
+    thresh: Optional[np.ndarray] = None
+    brs: List[Any] = field(default_factory=list)
+    crop_indices: List[Any] = field(default_factory=list)
+    padding: int = 50
 
     @property
     def _dict(self) -> OrderedDict:

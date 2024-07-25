@@ -140,7 +140,7 @@ class CropWindow(Toplevel):
     # function to process (threshold, display indices) passed image to init
     def show_image(self, pad: int = 50) -> None:
         """Processes the image -- threshold, bounding rects + indices"""
-        if self.image is not None and self.thresh is None and self.brs is None:
+        if self.image is not None and self.thresh is None and len(self.brs) == 0:
             self.thresh, self.brs = generate_thresholded_image(
                 image=self.image,
                 pad=pad,
@@ -186,7 +186,7 @@ class CropWindow(Toplevel):
         """Called to update the padding"""
         self.padding = int(self.pad_spinbox.get())
         self.thresh, self.brs = generate_thresholded_image(
-            image=self.image, k=self.k, pad=self.padding
+            image=self.image, k=self.config['k'], pad=self.padding
         )
         self.show_image(pad=self.padding)  # update callable is called here
 

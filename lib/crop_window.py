@@ -15,6 +15,7 @@ from tkinter import messagebox
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.patches import Rectangle
 
 from PIL import Image as PILImage
 import numpy as np
@@ -35,7 +36,7 @@ class CropWindow(Toplevel):
         image_path: str,
         update_callable: Callable[["ImageData"], Any],
         image_data: "ImageData" = ImageData(),
-        config: dict = None,
+        cfg: dict = None,
     ) -> None:
         """Initialize the class --
         * 'root' -- tkinter root,
@@ -53,7 +54,9 @@ class CropWindow(Toplevel):
         self.iid = image_data.image_id  # image identifier, useful for TreeView
         self.thresh = image_data.thresh  # the thresholded image
         self.brs = image_data.brs  # list of boundingRects (tuple[x,y,w,h])
-        self.crop_indices = image_data.crop_indices  # indices of bounding rects to crop by
+        self.crop_indices = (
+            image_data.crop_indices
+        )  # indices of bounding rects to crop by
         self.padding = image_data.padding  # padding of cropping rects
 
         self.title(self.iid)
@@ -69,10 +72,23 @@ class CropWindow(Toplevel):
         self.update_callable = update_callable
 
         # config stores parameters for thresholding algorithm
-        self.config = config
+        self.cfg = cfg
 
         # initialize UI
         self.create_widgets()
+        
+        # for drawing, dragging bounding rects
+        self.rect = None
+        self.start_x = None
+        self.start_y = None
+        self.current_rect_id = None
+        
+        self.menu = Menu(self)
+        self.config(menu=self.menu)
+        
+        self.help_menu = Menu(self.menu, tearoff=0)
+        self.help_menu.add_command(label="How to use", command=self.show_help)
+        self.menu.add_cascade(label='Help', menu=self.help_menu)
 
     def create_widgets(self) -> None:
         """Initialize UI Elements"""
@@ -118,6 +134,11 @@ class CropWindow(Toplevel):
             crop_indices=self.crop_indices,
             padding=self.padding,
         )
+        
+    def bind_canvas(self, canvas: Any) -> None:
+        canvas.mpl_connect("button_press_event", self.on_button_press)
+        canvas.mpl_connect("motion_notify_event", self.on_mouse_drag)
+        canvas.mpl_connect("button_release_event", self.on_button_release)
 
     def update_widgets(self) -> None:
         """Called once image is processed, places the rest of the UI"""
@@ -129,7 +150,9 @@ class CropWindow(Toplevel):
         self.crop_indices_entry.grid(row=3, column=5)
         if self.crop_indices:
             self.crop_indices_entry.delete(0, "end")
-            self.crop_indices_entry.insert(0, ",".join([str(i) for i in self.crop_indices]))
+            self.crop_indices_entry.insert(
+                0, ",".join([str(i) for i in self.crop_indices])
+            )
         self.crop_button.grid(row=3, column=6)
 
     def update_widgets_post_crop(self) -> None:
@@ -144,11 +167,11 @@ class CropWindow(Toplevel):
             self.thresh, self.brs = generate_thresholded_image(
                 image=self.image,
                 pad=pad,
-                k=self.config["k"],
-                erosion=self.config["erosion"],
-                erosion_iterations=self.config["erosion_iterations"],
-                clahe_clip_limit=self.config["clahe_clip_limit"],
-                clahe_tile_grid_size=self.config["clahe_tile_grid_size"],
+                k=self.cfg["k"],
+                erosion=self.cfg["erosion"],
+                erosion_iterations=self.cfg["erosion_iterations"],
+                clahe_clip_limit=self.cfg["clahe_clip_limit"],
+                clahe_tile_grid_size=self.cfg["clahe_tile_grid_size"],
             )
 
         fig = Figure()
@@ -156,6 +179,10 @@ class CropWindow(Toplevel):
 
         # pass thresh and brs to update function
         self.update_callable(image_data=self.update_image_data())
+        
+        for n, rect in enumerate(self.brs):
+            x1, y1, x2, y2 = rect
+            cv.rectangle(self.thresh, (x1, y1), (x2, y2), (255, 255, 0), 2)
 
         # show on plot widget
         plot.imshow(self.thresh)
@@ -176,17 +203,18 @@ class CropWindow(Toplevel):
         fig.tight_layout(pad=0)
 
         # add to tkinter canvas
-        canvas = FigureCanvasTkAgg(fig, master=self)
-        canvas.draw()
+        self.canvas = FigureCanvasTkAgg(fig, master=self)
+        self.bind_canvas(self.canvas)
+        self.canvas.draw()
 
-        canvas.get_tk_widget().grid(row=2, column=0)
+        self.canvas.get_tk_widget().grid(row=2, column=0)
         self.update_widgets()
 
     def update_padding(self) -> None:
         """Called to update the padding"""
         self.padding = int(self.pad_spinbox.get())
         self.thresh, self.brs = generate_thresholded_image(
-            image=self.image, k=self.config['k'], pad=self.padding
+            image=self.image, k=self.cfg["k"], pad=self.padding
         )
         self.show_image(pad=self.padding)  # update callable is called here
 
@@ -236,10 +264,10 @@ class CropWindow(Toplevel):
 
             fig.tight_layout(pad=0)
 
-            canvas = FigureCanvasTkAgg(fig, master=self)
-            canvas.draw()
+            self.canvas = FigureCanvasTkAgg(fig, master=self)
+            self.canvas.draw()
 
-            canvas.get_tk_widget().grid(row=2, column=0)
+            self.canvas.get_tk_widget().grid(row=2, column=0)
             self.rotate_button.grid(row=5, column=0)
 
     # rotate button will perform a 90 degree clockwise rotation
@@ -266,10 +294,10 @@ class CropWindow(Toplevel):
 
             fig.tight_layout(pad=0)
 
-            canvas = FigureCanvasTkAgg(fig, master=self)
-            canvas.draw()
+            self.canvas = FigureCanvasTkAgg(fig, master=self)
+            self.canvas.draw()
 
-            canvas.get_tk_widget().grid(row=2, column=0)
+            self.canvas.get_tk_widget().grid(row=2, column=0)
             self.rotate_button.grid(row=5, column=0)
 
     def write_images(self) -> None:
@@ -285,3 +313,36 @@ class CropWindow(Toplevel):
                 out_img.save(out_path + ".png")
 
             messagebox.showinfo("Saved", "Saved Images to {}".format(out_path))
+
+
+    def on_button_press(self, event) -> None:
+        """Handle mouse button press event"""
+        if event.inaxes is not None:
+            self.start_x = event.xdata
+            self.start_y = event.ydata
+            self.rect = Rectangle((self.start_x, self.start_y), 0, 0, fill=False, edgecolor='red')
+            event.inaxes.add_patch(self.rect)
+            self.canvas.draw()
+    def on_mouse_drag(self, event) -> None:
+        """Handle mouse drag event"""
+        if self.rect is not None and event.inaxes is not None:
+            x0, y0 = self.rect.xy
+            self.rect.set_width(event.xdata - x0)
+            self.rect.set_height(event.ydata - y0)
+            print(self.rect)
+            self.canvas.draw()
+
+    def on_button_release(self, event) -> None:
+        """Handle mouse button release event"""
+        if self.rect is not None:
+            new_rect = (self.rect.get_x(), self.rect.get_y(), (self.rect.get_x() + self.rect.get_width()), (self.rect.get_y() + self.rect.get_height()))
+            new_rect = tuple([int(np.round(c, 0)) for c in new_rect])
+            print("NEW RECT", new_rect)
+            self.brs.append(new_rect)
+            print(self.brs)
+            self.rect = None
+            
+            self.show_image()
+            
+    def show_help(self) -> None:
+        messagebox.showinfo("How to use", "Hit process to generate thresholded images. Input the indices (idx=n) into 'Valid Indices' in the bottom right. If you would like to add a new rectangle, simply draw on the screen, starting from the top left corner.")

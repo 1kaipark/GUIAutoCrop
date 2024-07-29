@@ -90,12 +90,12 @@ def generate_thresholded_image(
         x, y, w, h = cv.boundingRect(contour)
         brs.append((x - pad, y - pad, x + w + pad, y + h + pad))
 
-    blank = image.copy()
-    for n, rect in enumerate(brs):
-        x1, y1, x2, y2 = rect
-        cv.rectangle(blank, (x1, y1), (x2, y2), (255, 255, 0), 2)
+    # blank = image.copy()
+    # for n, rect in enumerate(brs):
+    #     x1, y1, x2, y2 = rect
+    #     cv.rectangle(blank, (x1, y1), (x2, y2), (255, 255, 0), 2)
 
-    return blank, brs
+    return image.copy(), brs
 
 
 def crop_rect(img: np.ndarray, rect: tuple[int, int, int, int]) -> np.ndarray:

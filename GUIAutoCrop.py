@@ -36,7 +36,7 @@ class SlidesManager(object):
         self.create_widgets()
 
         with open("config.json", "rb") as fi:
-            self.config = json.load(fi)
+            self.cfg = json.load(fi)
 
     def create_widgets(self) -> None:
         """Initialize UI elements"""
@@ -118,7 +118,7 @@ class SlidesManager(object):
             image_path=fpath,
             update_callable=self.update_metadata,
             image_data=self.image_data_dict[fname],
-            config=self.config,
+            cfg=self.cfg,
         )
 
         crop_indices = self.image_data_dict[fname].crop_indices

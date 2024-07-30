@@ -166,6 +166,7 @@ class CropWindow(Toplevel):
     def show_image(self, pad: int = 50) -> None:
         """Processes the image -- threshold, bounding rects + indices"""
         if self.image is not None and self.thresh is None and len(self.brs) == 0:
+            self.image = np.pad(self.image, pad_width = [(400, 400), (400, 400), (0, 0)], mode='constant') # pad image to avoid overflow
             self.thresh, self.brs = generate_thresholded_image(
                 image=self.image,
                 pad=pad,

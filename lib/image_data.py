@@ -3,6 +3,7 @@ from collections import OrderedDict
 from typing import Any, List, Optional
 import numpy as np
 
+
 @dataclass
 class ImageData:
     """Container class to store image metadata"""

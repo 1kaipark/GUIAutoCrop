@@ -76,19 +76,19 @@ class CropWindow(Toplevel):
 
         # initialize UI
         self.create_widgets()
-        
+
         # for drawing, dragging bounding rects
         self.rect = None
         self.start_x = None
         self.start_y = None
         self.current_rect_id = None
-        
+
         self.menu = Menu(self)
         self.config(menu=self.menu)
-        
+
         self.help_menu = Menu(self.menu, tearoff=0)
         self.help_menu.add_command(label="How to use", command=self.show_help)
-        self.menu.add_cascade(label='Help', menu=self.help_menu)
+        self.menu.add_cascade(label="Help", menu=self.help_menu)
 
     def create_widgets(self) -> None:
         """Initialize UI Elements"""
@@ -134,8 +134,9 @@ class CropWindow(Toplevel):
             crop_indices=self.crop_indices,
             padding=self.padding,
         )
-        
+
     def bind_canvas(self, canvas: Any) -> None:
+        """This will bind canvas to mouse handling functions"""
         canvas.mpl_connect("button_press_event", self.on_button_press)
         canvas.mpl_connect("motion_notify_event", self.on_mouse_drag)
         canvas.mpl_connect("button_release_event", self.on_button_release)
@@ -179,7 +180,7 @@ class CropWindow(Toplevel):
 
         # pass thresh and brs to update function
         self.update_callable(image_data=self.update_image_data())
-        
+
         for n, rect in enumerate(self.brs):
             x1, y1, x2, y2 = rect
             cv.rectangle(self.thresh, (x1, y1), (x2, y2), (255, 255, 0), 2)
@@ -314,35 +315,43 @@ class CropWindow(Toplevel):
 
             messagebox.showinfo("Saved", "Saved Images to {}".format(out_path))
 
-
     def on_button_press(self, event) -> None:
-        """Handle mouse button press event"""
+        """Start drawing rectangle when mouse button is held down"""
         if event.inaxes is not None:
             self.start_x = event.xdata
             self.start_y = event.ydata
-            self.rect = Rectangle((self.start_x, self.start_y), 0, 0, fill=False, edgecolor='red')
+            self.rect = Rectangle(
+                (self.start_x, self.start_y), 0, 0, fill=False, edgecolor="red"
+            )
             event.inaxes.add_patch(self.rect)
             self.canvas.draw()
+
     def on_mouse_drag(self, event) -> None:
-        """Handle mouse drag event"""
+        """Continue drawing rectangle -- set height and width"""
         if self.rect is not None and event.inaxes is not None:
             x0, y0 = self.rect.xy
             self.rect.set_width(event.xdata - x0)
             self.rect.set_height(event.ydata - y0)
-            print(self.rect)
             self.canvas.draw()
 
     def on_button_release(self, event) -> None:
-        """Handle mouse button release event"""
+        """When mouse is released -- update bounding rects in memory with new rect."""
         if self.rect is not None:
-            new_rect = (self.rect.get_x(), self.rect.get_y(), (self.rect.get_x() + self.rect.get_width()), (self.rect.get_y() + self.rect.get_height()))
+            new_rect = (
+                self.rect.get_x(),
+                self.rect.get_y(),
+                (self.rect.get_x() + self.rect.get_width()),
+                (self.rect.get_y() + self.rect.get_height()),
+            )
             new_rect = tuple([int(np.round(c, 0)) for c in new_rect])
-            print("NEW RECT", new_rect)
             self.brs.append(new_rect)
             print(self.brs)
             self.rect = None
-            
+
             self.show_image()
-            
+
     def show_help(self) -> None:
-        messagebox.showinfo("How to use", "Hit process to generate thresholded images. Input the indices (idx=n) into 'Valid Indices' in the bottom right. If you would like to add a new rectangle, simply draw on the screen, starting from the top left corner.")
+        messagebox.showinfo(
+            "How to use",
+            "Hit process to generate thresholded images. Input the indices (idx=n) into 'Valid Indices' in the bottom right. If you would like to add a new rectangle, simply draw on the screen, starting from the top left corner.",
+        )

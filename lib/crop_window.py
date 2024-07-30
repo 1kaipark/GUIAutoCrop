@@ -22,6 +22,7 @@ import numpy as np
 import cv2 as cv
 
 import os
+from pathlib import Path
 
 from .autocrop import load_img_array, generate_thresholded_image, get_cropped_images
 from .image_data import ImageData
@@ -309,7 +310,7 @@ class CropWindow(Toplevel):
 
             for crop_indices, o in enumerate(self.cropped_images):
                 out_img = PILImage.fromarray(o)
-                out_name = "{}_s{}".format(self.iid, str(crop_indices + 1).zfill(3))
+                out_name = "{}_s{}".format(Path(self.iid).stem, str(crop_indices + 1).zfill(3))
                 out_path = os.path.join(save_path, out_name)
                 out_img.save(out_path + ".png")
 

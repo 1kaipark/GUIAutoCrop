@@ -65,9 +65,9 @@ def generate_thresholded_image(
     b = clahe.apply(b[:, :, 2])
 
     if erosion:
-        b = erode(b, iterations=erosion_iterations)  # run on blue channel; erode to reduce noise
-
-
+        b = erode(
+            b, iterations=erosion_iterations
+        )  # run on blue channel; erode to reduce noise
 
     t = iseg._threshold_image(b, k=k, lightbg="auto", darkbg="auto")
     t = ImageSegmenter._image_dilation(t)

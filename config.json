@@ -1,7 +1,7 @@
 {
-  "k": 5,
+  "k": 3,
   "erosion": true,
-  "erosion_iterations": 4,
-  "clahe_clip_limit": 4.0,
-  "clahe_tile_grid_size": [8, 8]
+  "erosion_iterations": 2,
+  "clahe_clip_limit": 2.0,
+  "clahe_tile_grid_size": [4, 4]
 }

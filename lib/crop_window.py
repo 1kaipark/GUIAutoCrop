@@ -179,19 +179,15 @@ class CropWindow(Toplevel):
         fig = Figure()
         plot = fig.add_subplot()
 
-        # pass thresh and brs to update function
-        self.update_callable(image_data=self.update_image_data())
-
         for n, rect in enumerate(self.brs):
             x1, y1, x2, y2 = rect
-            cv.rectangle(self.thresh, (x1, y1), (x2, y2), (255, 255, 0), 2)
+            cv.rectangle(self.thresh, (x1, y1), (x2, y2), (255, 0, 0), 4)
+            plot.text(x=x1, y=y1 - 50, s=f"{n}", color="red")
 
+        # pass thresh and brs to update function
+        self.update_callable(image_data=self.update_image_data())
         # show on plot widget
         plot.imshow(self.thresh)
-
-        for n, rect in enumerate(self.brs):
-            x, y, w, h = rect
-            plot.text(x=x, y=y - (0.2 * y), s=f"idx={n}", color="w")
 
         # HIDE AXES: https://www.tutorialspoint.com/how-to-turn-off-the-ticks-and-marks-of-a-matlibplot-axes
         # Hide X and Y axes label marks
@@ -310,7 +306,9 @@ class CropWindow(Toplevel):
 
             for crop_indices, o in enumerate(self.cropped_images):
                 out_img = PILImage.fromarray(o)
-                out_name = "{}_s{}".format(Path(self.iid).stem, str(crop_indices + 1).zfill(3))
+                out_name = "{}_s{}".format(
+                    Path(self.iid).stem, str(crop_indices + 1).zfill(3)
+                )
                 out_path = os.path.join(save_path, out_name)
                 out_img.save(out_path + ".png")
 
@@ -322,7 +320,7 @@ class CropWindow(Toplevel):
             self.start_x = event.xdata
             self.start_y = event.ydata
             self.rect = Rectangle(
-                (self.start_x, self.start_y), 0, 0, fill=False, edgecolor="red"
+                (self.start_x, self.start_y), 0, 0, fill=False, edgecolor="pink"
             )
             event.inaxes.add_patch(self.rect)
             self.canvas.draw()
